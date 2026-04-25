@@ -1,6 +1,5 @@
 """Tests for or_algo.exception module."""
 
-import pytest
 from or_algo.exception import OrAlgoException
 
 

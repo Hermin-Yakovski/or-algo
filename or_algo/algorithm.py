@@ -1,6 +1,6 @@
 """Algorithm orchestrator class for or-algo package."""
 
-from typing import Type
+from typing import Any, Type
 from register import Register, Parameter
 
 from .solver import Solver
@@ -14,11 +14,11 @@ class Algorithm:
     fails, execution stops and an OrAlgoException is raised.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize an empty Algorithm."""
-        self._solvers: list[tuple[Type[Solver], tuple, dict]] = []
+        self._solvers: list[tuple[Type[Solver], tuple[Any, ...], dict[str, Any]]] = []
 
-    def append(self, solver_type: Type[Solver], *args, **kwargs) -> int:
+    def append(self, solver_type: Type[Solver], *args: Any, **kwargs: Any) -> int:
         """Add a solver to the execution sequence.
 
         Args:
