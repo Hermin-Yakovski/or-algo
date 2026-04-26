@@ -56,3 +56,11 @@ class Var(Symbol):
     @property
     def parameter(self) -> Any:
         return self._parameter
+
+
+class Constr(Symbol):
+    """Constraint wrapper around OR-Tools Constraint."""
+
+    def __init__(self, name: str, name_cn: str, sign: str):
+        super().__init__(name, name_cn, sign)
+        # vtype will be set to pywraplp.Constraint when OR-Tools is imported

@@ -2,6 +2,7 @@
 
 from or_algo.lp.symbol import Symbol
 from or_algo.lp.symbol import Var
+from or_algo.lp.symbol import Constr
 from unittest.mock import Mock
 
 
@@ -58,3 +59,19 @@ def test_var_inherits_from_symbol():
     assert isinstance(var, Symbol)
     assert str(var) == "t"
     assert repr(var) == "test"
+
+
+def test_constr_creation():
+    """Constr should store name, name_cn, and sign."""
+    constr = Constr(name="capacity_limit", name_cn="容量限制", sign="cap")
+    assert constr.name == "capacity_limit"
+    assert constr.name_cn == "容量限制"
+    assert constr.sign == "cap"
+
+
+def test_constr_inherits_from_symbol():
+    """Constr should be a Symbol subclass."""
+    constr = Constr(name="test", name_cn="测试", sign="t")
+    assert isinstance(constr, Symbol)
+    assert str(constr) == "t"
+    assert repr(constr) == "test"
