@@ -57,3 +57,47 @@ class LpSolver(Solver):
     @property
     def solver_type(self) -> str:
         return self._solver_type
+
+    def append(self, step: Type["LpStep"], *args, **kwargs) -> None:
+        """Add a build step to the execution sequence.
+
+        Args:
+            step: LpStep subclass (CreateVar or CreateConstr)
+            *args, **kwargs: Arguments to pass to step.__init__()
+
+        Raises:
+            LpSolverException: If step type is unsupported
+        """
+        from or_algo.lp.step import CreateVar, CreateConstr
+
+        if issubclass(step, CreateVar):
+            # Fill args with (weight, lb, ub) if not provided
+            # CreateVar.__init__ expects: (symbol, weight, lb, ub)
+            # If user provides only symbol, append weight, lb, ub
+            # If user provides symbol + weight, append lb, ub
+            # etc.
+            default_args = (self._weight, self._lb, self._ub)
+            # Calculate how many default args we need to append
+            # args[0] is symbol, so we need up to 3 more args
+            num_provided = len(args)
+            num_needed = max(0, 4 - num_provided)  # 4 = symbol + weight + lb + ub
+            full_args = args + default_args[:num_needed]
+            self._build_steps.append((step, full_args, kwargs))
+        elif issubclass(step, CreateConstr):
+            self._build_steps.append((step, args, kwargs))
+        else:
+            raise exception.LpSolverException(
+                f"Unsupported step type {step} in {type(self).__name__}.append()"
+            )
+
+    def solve(self, data):
+        """Solve the LP model.
+
+        Args:
+            data: Register[Parameter] containing input parameters
+
+        Returns:
+            Solver status/result
+        """
+        # TODO: Implement in Task 11
+        raise NotImplementedError("LpSolver.solve() will be implemented in Task 11")

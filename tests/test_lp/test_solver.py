@@ -1,6 +1,10 @@
 import pytest
 from or_algo.lp.solver import LpSolver
 from or_algo import Solver
+from or_algo.lp.step import CreateVar, CreateConstr
+from or_algo.lp.symbol import Var, Constr
+from register import Register
+from unittest.mock import Mock
 
 
 def test_lp_solver_is_solver():
@@ -53,3 +57,79 @@ def test_lp_solver_custom_weight_lb_ub():
     assert solver._weight is weight
     assert solver._lb is lb
     assert solver._ub is ub
+
+
+def test_lp_solver_append_create_var():
+    """LpSolver.append() should accept CreateVar steps."""
+    solver = LpSolver(name="test_solver")
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.name_cn = "x变量"
+    mock_param.id = 1
+    mock_param.vtype = float
+    var_symbol = Var(p=mock_param, sign="x")
+
+    class TestCreateVar(CreateVar):
+        def run(self, data, model, var):
+            pass
+
+    initial_count = len(solver._build_steps)
+    solver.append(TestCreateVar, var_symbol)
+    assert len(solver._build_steps) == initial_count + 1
+
+
+def test_lp_solver_append_create_var_auto_fills_args():
+    """LpSolver.append() should auto-fill weight, lb, ub for CreateVar."""
+    solver = LpSolver(name="test_solver")
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.name_cn = "x变量"
+    mock_param.id = 1
+    mock_param.vtype = float
+    var_symbol = Var(p=mock_param, sign="x")
+
+    class TestCreateVar(CreateVar):
+        def __init__(self, symbol, weight, lb, ub, custom_arg=None):
+            super().__init__(symbol, weight, lb, ub)
+            self.custom_arg = custom_arg
+
+        def run(self, data, model, var):
+            pass
+
+    # Pass only symbol and custom_arg - weight, lb, ub should be auto-filled
+    solver.append(TestCreateVar, var_symbol, custom_arg="test")
+    step_type, args, kwargs = solver._build_steps[-1]
+
+    assert args[0] is var_symbol  # symbol
+    assert args[1] is solver._weight  # weight
+    assert args[2] is solver._lb  # lb
+    assert args[3] is solver._ub  # ub
+    assert kwargs['custom_arg'] == "test"
+
+
+def test_lp_solver_append_create_constr():
+    """LpSolver.append() should accept CreateConstr steps."""
+    solver = LpSolver(name="test_solver")
+
+    constr_symbol = Constr(name="limit", name_cn="限制", sign="L")
+
+    class TestCreateConstr(CreateConstr):
+        def run(self, data, model, var):
+            pass
+
+    initial_count = len(solver._build_steps)
+    solver.append(TestCreateConstr, constr_symbol)
+    assert len(solver._build_steps) == initial_count + 1
+
+
+def test_lp_solver_append_invalid_step_type():
+    """LpSolver.append() should raise exception for unsupported step types."""
+    solver = LpSolver(name="test_solver")
+
+    class InvalidStep:
+        pass
+
+    with pytest.raises(Exception):  # LpSolverException
+        solver.append(InvalidStep)
