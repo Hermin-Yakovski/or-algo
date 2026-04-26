@@ -1,6 +1,9 @@
 """Symbol hierarchy for LP model elements."""
 
-from typing import Type, Any
+from typing import Type, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from register import Parameter  # noqa: F401
 
 
 class Symbol:
@@ -34,3 +37,22 @@ class Symbol:
 
     def __repr__(self) -> str:
         return self._name
+
+
+class Var(Symbol):
+    """Decision variable wrapper around OR-Tools Variable."""
+
+    _parameter: Any  # Will be Parameter at runtime
+
+    def __init__(self, p: Any, sign: str):
+        super().__init__(name=p.name, name_cn=p.name_cn, sign=sign)
+        self._parameter = p
+        # vtype will be set to pywraplp.Variable when OR-Tools is imported
+
+    @property
+    def id(self) -> int:
+        return self._parameter.id  # type: ignore[no-any-return]
+
+    @property
+    def parameter(self) -> Any:
+        return self._parameter
