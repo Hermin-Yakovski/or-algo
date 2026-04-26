@@ -9,7 +9,7 @@ packages = [{include = "or_algo"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 ortools = "^9.15.6755"
-register = {path = "../register"}
+register = "0.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
