@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Any, Type
 
 if TYPE_CHECKING:
-    from register import Register
+    from register import Register, Parameter
     from or_algo.lp.symbol import Symbol
     from or_algo.lp.step import LpStep
     from ortools.linear_solver import pywraplp
@@ -58,7 +58,7 @@ class LpSolver(Solver):
     def solver_type(self) -> str:
         return self._solver_type
 
-    def append(self, step: Type["LpStep"], *args, **kwargs) -> None:
+    def append(self, step: Type["LpStep"], *args: Any, **kwargs: Any) -> None:
         """Add a build step to the execution sequence.
 
         Args:
@@ -90,7 +90,7 @@ class LpSolver(Solver):
                 f"Unsupported step type {step} in {type(self).__name__}.append()"
             )
 
-    def solve(self, data):
+    def solve(self, data: "Register[Parameter]") -> Any:
         """Solve the LP model.
 
         Args:
