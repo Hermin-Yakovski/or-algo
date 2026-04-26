@@ -1,6 +1,6 @@
 """Symbol hierarchy for LP model elements."""
 
-from typing import Type
+from typing import Type, Any
 
 
 class Symbol:
@@ -9,7 +9,7 @@ class Symbol:
     _name: str
     _name_cn: str
     _sign: str
-    vtype: Type
+    vtype: Type[Any]
 
     def __init__(self, name: str, name_cn: str, sign: str):
         self._name = name
@@ -29,8 +29,8 @@ class Symbol:
     def sign(self) -> str:
         return self._sign
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._sign
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self._name
