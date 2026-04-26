@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from register import Register
     from register import Parameter
-    from or_algo.lp.symbol import Symbol, Var
+    from or_algo.lp.symbol import Symbol, Var, Constr
     from ortools.linear_solver import pywraplp
 
 
@@ -77,4 +77,21 @@ class CreateVar(LpStep, ABC):
         var: "Register[Symbol]"
     ) -> None:
         """Create variables in the model."""
+        pass
+
+
+class CreateConstr(LpStep, ABC):
+    """Base class for constraint creation steps."""
+
+    def __init__(self, symbol: "Constr"):
+        super().__init__(symbol)
+
+    @abstractmethod
+    def run(
+        self,
+        data: "Register[Parameter]",
+        model: "pywraplp.Solver",
+        var: "Register[Symbol]"
+    ) -> None:
+        """Create constraints in the model."""
         pass

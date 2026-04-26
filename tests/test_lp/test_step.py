@@ -3,6 +3,7 @@ from abc import ABC
 from or_algo.lp.step import LpStep
 from or_algo.lp.symbol import Symbol
 from or_algo.lp.symbol import Var
+from or_algo.lp.symbol import Constr
 from register import Register
 from unittest.mock import Mock
 
@@ -131,3 +132,32 @@ def test_create_var_vtype_mapping():
         ub=Register()
     )
     assert step_bool.vtype == 'INTEGER'
+
+
+def test_create_constr_is_lp_step():
+    """CreateConstr should be an LpStep subclass."""
+    from or_algo.lp.step import CreateConstr
+    assert issubclass(CreateConstr, LpStep)
+    assert issubclass(CreateConstr, ABC)
+
+
+def test_create_constr_cannot_be_instantiated_directly():
+    """CreateConstr should be abstract without run() implementation."""
+    from or_algo.lp.step import CreateConstr
+    constr_symbol = Constr(name="limit", name_cn="限制", sign="L")
+
+    with pytest.raises(TypeError):
+        CreateConstr(symbol=constr_symbol)
+
+
+def test_create_constr_concrete_subclass():
+    """CreateConstr subclass with run() should be instantiable."""
+    from or_algo.lp.step import CreateConstr
+    constr_symbol = Constr(name="limit", name_cn="限制", sign="L")
+
+    class ConcreteCreateConstr(CreateConstr):
+        def run(self, data, model, var):
+            pass
+
+    step = ConcreteCreateConstr(symbol=constr_symbol)
+    assert step._symbol is constr_symbol
