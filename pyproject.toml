@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "or-algo"
-version = "0.1.0"
+version = "0.2.0"
 description = "A general-purpose algorithm framework for orchestrating solvers"
 authors = ["yehemin <yehemin@example.com>"]
 readme = "README.md"
@@ -8,7 +8,8 @@ packages = [{include = "or_algo"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-register = "0.1.0"
+ortools = "^9.15.6755"
+register = {path = "../register"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
