@@ -5,6 +5,7 @@ from or_algo.lp.step import CreateVar, CreateConstr
 from or_algo.lp.symbol import Var, Constr
 from register import Register
 from unittest.mock import Mock
+from ortools.linear_solver import pywraplp
 
 
 def test_lp_solver_is_solver():
@@ -133,3 +134,71 @@ def test_lp_solver_append_invalid_step_type():
 
     with pytest.raises(Exception):  # LpSolverException
         solver.append(InvalidStep)
+
+
+def test_lp_solver_solve_executes_build_steps():
+    """LpSolver.solve() should execute build steps in order."""
+    from unittest.mock import Mock, MagicMock
+
+    solver = LpSolver(name="test_solver")
+
+    # Mock the steps
+    executed_steps = []
+
+    class Step1(CreateVar):
+        def run(self, data, model, var):
+            executed_steps.append('step1')
+
+    class Step2(CreateConstr):
+        def run(self, data, model, var):
+            executed_steps.append('step2')
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.name_cn = "x变量"
+    mock_param.id = 1
+    mock_param.vtype = float
+    var_symbol = Var(p=mock_param, sign="x")
+    constr_symbol = Constr(name="limit", name_cn="限制", sign="L")
+
+    solver.append(Step1, var_symbol)
+    solver.append(Step2, constr_symbol)
+
+    # Create mock data register
+    data = Register()
+
+    # Mock the model.optimize() to return OPTIMAL
+    solver._model.Solve = Mock(return_value=pywraplp.Solver.OPTIMAL)
+
+    # Solve
+    result = solver.solve(data)
+
+    assert executed_steps == ['step1', 'step2']
+    assert result is data  # Should return the same register
+
+
+def test_lp_solver_solve_build_step_exception():
+    """LpSolver.solve() should wrap build step exceptions."""
+    class FailingStep(CreateVar):
+        def run(self, data, model, var):
+            raise ValueError("Step failed!")
+
+    solver = LpSolver(name="test_solver")
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.name_cn = "x变量"
+    mock_param.id = 1
+    mock_param.vtype = float
+    var_symbol = Var(p=mock_param, sign="x")
+
+    solver.append(FailingStep, var_symbol)
+
+    data = Register()
+
+    # Mock the model.optimize() to return OPTIMAL (won't be reached)
+    solver._model.Solve = Mock(return_value=pywraplp.Solver.OPTIMAL)
+
+    # Should raise BuildLpStepException
+    with pytest.raises(Exception):  # BuildLpStepException
+        solver.solve(data)

@@ -90,14 +90,45 @@ class LpSolver(Solver):
                 f"Unsupported step type {step} in {type(self).__name__}.append()"
             )
 
-    def solve(self, data: "Register[Parameter]") -> Any:
-        """Solve the LP model.
+    def solve(self, data: "Register[Parameter]") -> "Register[Parameter]":
+        """Build and solve the LP model.
 
         Args:
-            data: Register[Parameter] containing input parameters
+            data: Register containing input parameters
 
         Returns:
-            Solver status/result
+            The same Register (users can extract solutions via their own mechanisms)
+
+        Raises:
+            BuildLpStepException: If a build step fails
+            LpModelOptimizeException: If optimization fails or no solution is found
         """
-        # TODO: Implement in Task 11
-        raise NotImplementedError("LpSolver.solve() will be implemented in Task 11")
+        # Execute build steps
+        for step_type, args, kwargs in self._build_steps:
+            try:
+                step_type(*args, **kwargs).run(data, self._model, self._var)
+            except Exception as e:
+                raise exception.BuildLpStepException(
+                    f"Failed {step_type.__name__}.run()! args={args}, kwargs={kwargs}"
+                ) from e
+
+        # Solve the model
+        status = self._model.Solve()
+
+        # Handle OR-Tools status codes
+        if status == pywraplp.Solver.OPTIMAL:
+            pass  # Users handle solution extraction
+        elif status == pywraplp.Solver.INFEASIBLE:
+            raise exception.LpModelOptimizeException("Model is infeasible")
+        elif status == pywraplp.Solver.UNBOUNDED:
+            raise exception.LpModelOptimizeException("Model is unbounded")
+        elif status == pywraplp.Solver.NOT_SOLVED:
+            raise exception.LpModelOptimizeException("Model was not solved")
+        elif status == pywraplp.Solver.ABNORMAL:
+            raise exception.LpModelOptimizeException("Solver encountered an error")
+        else:
+            raise exception.LpModelOptimizeException(
+                f"No solution found! status={status}"
+            )
+
+        return data
