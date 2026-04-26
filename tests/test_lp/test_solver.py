@@ -202,3 +202,59 @@ def test_lp_solver_solve_build_step_exception():
     # Should raise BuildLpStepException
     with pytest.raises(Exception):  # BuildLpStepException
         solver.solve(data)
+
+
+def test_lp_solver_solve_optimal_status():
+    """LpSolver.solve() should handle OPTIMAL status."""
+    solver = LpSolver(name="test_solver")
+    data = Register()
+
+    solver._model.Solve = Mock(return_value=pywraplp.Solver.OPTIMAL)
+
+    # Should not raise, should return data
+    result = solver.solve(data)
+    assert result is data
+
+
+def test_lp_solver_solve_infeasible_status():
+    """LpSolver.solve() should raise exception for INFEASIBLE status."""
+    solver = LpSolver(name="test_solver")
+    data = Register()
+
+    solver._model.Solve = Mock(return_value=pywraplp.Solver.INFEASIBLE)
+
+    with pytest.raises(Exception):  # LpModelOptimizeException
+        solver.solve(data)
+
+
+def test_lp_solver_solve_unbounded_status():
+    """LpSolver.solve() should raise exception for UNBOUNDED status."""
+    solver = LpSolver(name="test_solver")
+    data = Register()
+
+    solver._model.Solve = Mock(return_value=pywraplp.Solver.UNBOUNDED)
+
+    with pytest.raises(Exception):  # LpModelOptimizeException
+        solver.solve(data)
+
+
+def test_lp_solver_solve_not_solved_status():
+    """LpSolver.solve() should raise exception for NOT_SOLVED status."""
+    solver = LpSolver(name="test_solver")
+    data = Register()
+
+    solver._model.Solve = Mock(return_value=pywraplp.Solver.NOT_SOLVED)
+
+    with pytest.raises(Exception):  # LpModelOptimizeException
+        solver.solve(data)
+
+
+def test_lp_solver_solve_abnormal_status():
+    """LpSolver.solve() should raise exception for ABNORMAL status."""
+    solver = LpSolver(name="test_solver")
+    data = Register()
+
+    solver._model.Solve = Mock(return_value=pywraplp.Solver.ABNORMAL)
+
+    with pytest.raises(Exception):  # LpModelOptimizeException
+        solver.solve(data)
