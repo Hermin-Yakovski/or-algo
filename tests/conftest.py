@@ -3,7 +3,7 @@
 import os
 import sys
 
-# Add ortools DLL directory to search path (Windows only)
+# Add ortools DLL directory to PATH for subprocess compatibility (Windows only)
 if sys.platform == "win32":
     try:
         import site
@@ -11,11 +11,15 @@ if sys.platform == "win32":
         for pkg_path in site_packages:
             ortools_dll_path = os.path.join(pkg_path, "ortools", ".libs")
             if os.path.exists(ortools_dll_path):
+                # Add to PATH for subprocess
+                os.environ["PATH"] = ortools_dll_path + os.pathsep + os.environ.get("PATH", "")
+                # Also add to DLL directory for current process
                 os.add_dll_directory(ortools_dll_path)
                 break
     except Exception:
         # Silently fail if this doesn't work
         pass
+
 
 import pytest
 from register import Register, Parameter, Id, Code, Name, Index
