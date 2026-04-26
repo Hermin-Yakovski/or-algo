@@ -3,11 +3,13 @@
 from .solver import Solver
 from .algorithm import Algorithm
 from .exception import OrAlgoException
+from . import lp
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Solver",
     "Algorithm",
     "OrAlgoException",
+    "lp",
 ]

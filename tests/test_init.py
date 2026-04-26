@@ -24,4 +24,4 @@ def test_or_algo_exception_is_exported():
 def test_version_is_defined():
     """Test that package version is defined."""
     from or_algo import __version__
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.2.0"
