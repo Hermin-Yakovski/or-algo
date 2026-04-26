@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from register import Register
     from register import Parameter
-    from or_algo.lp.symbol import Symbol
+    from or_algo.lp.symbol import Symbol, Var
     from ortools.linear_solver import pywraplp
 
 
@@ -56,11 +56,18 @@ class CreateVar(LpStep, ABC):
     @property
     def vtype(self) -> str:
         """Map Parameter vtype to OR-Tools variable type."""
-        return {
+        vtype_mapping = {
             int: 'INTEGER',
             float: 'CONTINUOUS',
             bool: 'INTEGER',  # OR-Tools uses [0,1] integer for binary
-        }[self._symbol.parameter.vtype]
+        }
+        vtype = self._symbol.parameter.vtype
+        if vtype not in vtype_mapping:
+            raise ValueError(
+                f"Unsupported Parameter vtype: {vtype}. "
+                f"Supported types: {list(vtype_mapping.keys())}"
+            )
+        return vtype_mapping[vtype]
 
     @abstractmethod
     def run(
