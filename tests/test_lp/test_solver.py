@@ -37,8 +37,6 @@ def test_lp_solver_invalid_solver_type():
 def test_lp_solver_has_weight_lb_ub_defaults():
     """LpSolver should create default Register for weight, lb, ub."""
     from register import Register
-    from or_algo.lp import Symbol
-
     solver = LpSolver(name="test_solver")
     assert isinstance(solver._weight, Register)
     assert isinstance(solver._lb, Register)
@@ -138,7 +136,7 @@ def test_lp_solver_append_invalid_step_type():
 
 def test_lp_solver_solve_executes_build_steps():
     """LpSolver.solve() should execute build steps in order."""
-    from unittest.mock import Mock, MagicMock
+    from unittest.mock import Mock
 
     solver = LpSolver(name="test_solver")
 
