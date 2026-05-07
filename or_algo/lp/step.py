@@ -1,11 +1,15 @@
 """LpStep hierarchy for LP model building."""
 
+import itertools
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Callable, Any
+
+from or_algo.lp import exception as lp_exception
 
 if TYPE_CHECKING:
     from register import Register
     from register import Parameter
+    from register import Dimension, DimensionAsKey, Metric, Method
     from or_algo.lp.symbol import Symbol, Var, Constr
     from ortools.linear_solver import pywraplp
 
@@ -79,6 +83,144 @@ class CreateVar(LpStep, ABC):
         """Create variables in the model."""
         pass
 
+    def _create(self, data: "Register[Parameter]", model: "pywraplp.Solver", var: "Register[Symbol]",
+        primary_key: "Parameter",
+        dimension: tuple["Dimension", ...],
+        weight: Optional[float] = None,
+        lb: Optional[float] = None,
+        ub: Optional[float] = None,
+        *,
+        min_weight: float = 1e-6,
+        metric: Optional["Method"] = None,
+        which: Optional[tuple[bool, ...]] = None,
+        sense : str = 'minimize',
+        clear: bool = False,
+        skip: Optional[Callable[[tuple[int, ...]], bool]] = None,
+        ) -> int:
+        """
+        Add variables in batch
+
+        parameters
+        ----------
+        data : Register[Parameter]
+            s.a. self.run()
+        model : pywraplp.Solver
+            OR-Tools solver instance
+        var : Register[Symbol]
+            s.a. self.run()
+        primary_key : Parameter
+            The parameter, usually Id, that specifies dimensions of the scenario. The implementation assumes that this
+            parameter accepts only DimensionAsKey objects of which key is one-element tuple of Dimension.
+        dimension : tuple[Dimension, ...]
+            The dimension of the variables
+        weight : float, default None
+            If given, the weight of the variable, otherwise refer to self._weight: DimensionAsKey
+        lb : float, default None
+            If given, the lower bound of the variable, otherwise refer to self._lb: DimensionAsKey
+        ub : float, default None
+            If given, the upper bound of the variable, otherwise refer to self._ub: DimensionAsKey
+            Note: None is treated as infinity for OR-Tools compatibility
+        min_weight: float, default 1e-6
+            Threshold by which the weight of variable would be regarded as 0, if its absolute value < min_weight. It's
+            intended to enhance numerical stability and accelerate the solving session.
+        metric : var.Int, default None
+            If given, specifies the metric to be applied for the aggregation, otherwise aggregation won't be applied.
+        which: tuple[bool, ...]
+            Corresponds to argument 'dimension'. If given (prerequisite: metric is not None), specifies the dimension to
+            be aggregated, otherwise aggregate all.
+        sense : str, default 'minimize', choices=['minimize', 'maximize']
+            Objective direction. Uses OR-Tools SetMinimization()/SetMaximization().
+        clear : bool, default False
+            Note: OR-Tools objectives accumulate coefficients differently than PySCIPOpt.
+            This parameter is kept for backward compatibility but has limited effect.
+        skip : Callable, default None
+            Callable that accepts index: tuple[int, ...], and returns bool. Do not create variable of the index if True.
+
+        return
+        -------
+        The number of variables added.
+
+        notes
+        -----
+        OR-Tools API usage:
+        - Variable creation: solver.BoolVar() for binary [0,1], solver.IntVar() for integer,
+          solver.NumVar() for continuous
+        - Objective: Uses solver.Objective().SetCoefficient() for accumulation and
+          SetMinimization()/SetMaximization() for direction
+        """
+        if metric is None:
+            which_ = tuple(False for _ in dimension)
+        elif which is None:
+            which_ = tuple(True for _ in dimension)
+        elif len(which) != len(dimension):
+            raise lp_exception.BuildLpStepException(f"Invalid argument of CreateVars.create: length of which and dimension must be equal."
+                f"Got dimension={dimension}, which={which} when creating variable {self._symbol}")
+        else:
+            which_ = tuple(which)
+
+        # the dimension not to be aggregated
+        dimension_: tuple[Dimension, ...] = dimension if metric is None else tuple(
+            d for d, flag in zip(dimension, which_) if not flag)
+
+        # the dimension of the variables
+        dimension_final: tuple[Dimension, ...] = dimension
+        if metric is not None:
+            dimension_final += (Metric,)
+
+        # delete to re-decide
+        data[self._symbol.parameter].pop(dimension_final)
+
+        count: int = 0
+        for index_ in itertools.product(*[data.select(primary_key, (d,)) for d in dimension_]):
+            it = iter(index_)
+            index_final: tuple[int, ...] = tuple(Register.ALL if flag else next(it)[0] for flag in which_)
+            if metric is not None:
+                index_final += (metric,)
+            if skip is not None and skip(index_final):
+                continue
+
+            name = '{0}({1},)({2},)'.format(
+                self._symbol,
+                ','.join(d.sign for d in dimension_final),
+                ','.join(str(ix) for ix in index_final))
+            vtype: str = self.vtype if metric is None else 'CONTINUOUS'
+            lb_: float = self._lb[self._symbol][dimension_final].get(index_final, 0) if lb is None else lb
+            ub_raw: Optional[float] = self._ub[self._symbol][dimension_final].get(index_final, None) if ub is None else ub
+            ub_: float = ub_raw if ub_raw is not None else model.infinity()
+
+            # Create variable using type-specific OR-Tools methods
+            if vtype == 'INTEGER':
+                # Use BoolVar for binary variables (lb=0, ub=1)
+                if lb_ == 0 and ub_ == 1:
+                    variable = model.BoolVar(name)
+                else:
+                    variable = model.IntVar(lb_, ub_, name)
+            else:  # CONTINUOUS
+                variable = model.NumVar(lb_, ub_, name)
+            var[self._symbol][dimension_final][index_final] = variable
+            count += 1
+
+            if weight is None:
+                if dimension_final in self._weight[self._symbol]:
+                    weight_ = self._weight[self._symbol][dimension_final].get(index_final,
+                        self._weight[self._symbol][dimension_final].get((Register.ALL,) * len(dimension_final), 0))
+                else:
+                    weight_ = 0
+            else:
+                weight_ = weight
+
+            if abs(weight_) > min_weight:
+                # Use OR-Tools objective accumulation pattern
+                objective = model.Objective()
+                objective.SetCoefficient(variable, weight_)
+
+                # Set objective direction (OR-Tools requires explicit direction setting)
+                if sense == 'minimize':
+                    objective.SetMinimization()
+                else:
+                    objective.SetMaximization()
+
+        return count
 
 class CreateConstr(LpStep, ABC):
     """Base class for constraint creation steps."""

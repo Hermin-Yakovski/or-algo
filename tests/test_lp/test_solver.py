@@ -162,7 +162,7 @@ def test_lp_solver_solve_executes_build_steps():
     solver.append(Step1, var_symbol)
     solver.append(Step2, constr_symbol)
 
-    # Create mock data register
+    # Create mock data var
     data = Register()
 
     # Mock the model.optimize() to return OPTIMAL
@@ -172,7 +172,7 @@ def test_lp_solver_solve_executes_build_steps():
     result = solver.solve(data)
 
     assert executed_steps == ['step1', 'step2']
-    assert result is data  # Should return the same register
+    assert result is data  # Should return the same var
 
 
 def test_lp_solver_solve_build_step_exception():

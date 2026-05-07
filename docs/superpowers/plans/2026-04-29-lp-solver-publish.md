@@ -355,19 +355,19 @@ assert result is data
 
 To:
 ```python
-# Should not raise, should return published register
+# Should not raise, should return published var
 result = solver.solve(data)
 assert isinstance(result, Register)
 ```
 
 And update `test_lp_solver_solve_executes_build_steps` from:
 ```python
-assert result is data  # Should return the same register
+assert result is data  # Should return the same var
 ```
 
 To:
 ```python
-assert isinstance(result, Register)  # Should return a register
+assert isinstance(result, Register)  # Should return a var
 ```
 
 - [ ] **Step 5: Run tests to verify they pass**
@@ -403,7 +403,7 @@ def test_algorithm_solve_merges_published_values():
             self.publish_value = publish_value
 
         def solve(self, data: Register[Parameter]) -> Register[Parameter]:
-            # Create a new register with published values
+            # Create a new var with published values
             published = Register[Parameter]()
             published[Id][(Index,)][(0,)] = self.publish_value
             return published

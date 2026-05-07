@@ -62,5 +62,5 @@ def test_solver_solve_can_be_called(empty_register):
     assert (Index,) in empty_register[Id]
     assert (0,) in empty_register[Id][(Index,)]
     assert empty_register[Id][(Index,)][(0,)] == "solved"
-    # Verify the returned register is the same as input
+    # Verify the returned var is the same as input
     assert result is empty_register
