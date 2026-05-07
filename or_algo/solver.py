@@ -25,11 +25,13 @@ class Solver(ABC):
         return self._name
 
     @abstractmethod
-    def solve(self, data: Register[Parameter]) -> None:
+    def solve(self, data: Register[Parameter]) -> Register[Parameter]:
         """Solve the problem using data from the Register.
 
         Args:
-            data: Register containing input parameters; solutions
-                  are written back to this same Register.
+            data: Register containing input parameters.
+
+        Returns:
+            Register containing solutions (may be the same as input).
         """
         pass

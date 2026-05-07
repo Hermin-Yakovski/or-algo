@@ -20,8 +20,8 @@ def test_solver_cannot_be_instantiated_directly():
 def test_solver_default_name():
     """Test that Solver uses class name as default name."""
     class MockSolver(Solver):
-        def solve(self, data: Register[Parameter]) -> None:
-            pass
+        def solve(self, data: Register[Parameter]) -> Register[Parameter]:
+            return data
 
     solver = MockSolver()
     assert solver.name == "MockSolver"
@@ -30,8 +30,8 @@ def test_solver_default_name():
 def test_solver_custom_name():
     """Test that Solver accepts custom name."""
     class MockSolver(Solver):
-        def solve(self, data: Register[Parameter]) -> None:
-            pass
+        def solve(self, data: Register[Parameter]) -> Register[Parameter]:
+            return data
 
     solver = MockSolver(name="CustomName")
     assert solver.name == "CustomName"
@@ -50,14 +50,17 @@ def test_solver_solve_requires_implementation():
 def test_solver_solve_can_be_called(empty_register):
     """Test that a properly implemented Solver can call solve()."""
     class WorkingSolver(Solver):
-        def solve(self, data: Register[Parameter]) -> None:
+        def solve(self, data: Register[Parameter]) -> Register[Parameter]:
             # Store a marker to verify solve was called
             data[Id][(Index,)][(0,)] = "solved"
+            return data
 
     solver = WorkingSolver()
-    solver.solve(empty_register)
+    result = solver.solve(empty_register)
 
     # Verify solve was executed
     assert (Index,) in empty_register[Id]
     assert (0,) in empty_register[Id][(Index,)]
     assert empty_register[Id][(Index,)][(0,)] == "solved"
+    # Verify the returned register is the same as input
+    assert result is empty_register
