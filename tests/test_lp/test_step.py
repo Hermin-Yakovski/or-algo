@@ -282,3 +282,59 @@ def test_create_constr_calculate_metric_sum():
     assert metric_var_1.solution_value() == 2.0
     # metric_var_2 sums base vars with prefix (2,) -> only base1_2 = 3
     assert metric_var_2.solution_value() == 3.0
+
+
+def test_create_constr_calculate_metric_max():
+    """Test that MAX metric creates lower bound constraints (metric >= each base)."""
+    from or_algo.lp.step import CreateConstrCalculateMetric
+    from or_algo.lp.symbol import Var
+    from register import Register, Parameter, Dimension, Metric
+    from ortools.linear_solver import pywraplp
+
+    # Create mock parameter
+    mock_param = Mock(spec=Parameter)
+    mock_param.vtype = float
+
+    # Create dimensions
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    # Create variable symbol
+    var_symbol = Var(p=mock_param, sign='x')
+
+    # Create solver
+    model = pywraplp.Solver.CreateSolver('CBC')
+
+    # Create base variables
+    base1 = model.NumVar(0, 10, 'x_base1')
+    base2 = model.NumVar(0, 20, 'x_base2')
+    base3 = model.NumVar(0, 15, 'x_base3')
+
+    # Create metric variable
+    metric_var = model.NumVar(0, 100, 'x_max')
+
+    # Create register with base and metric variables
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = base1
+    var_register[var_symbol][(test_dim,)][(1,)] = base2
+    var_register[var_symbol][(test_dim,)][(2,)] = base3
+    var_register[var_symbol][(test_dim, Metric)][(0, Register.MAX)] = metric_var
+
+    # Create data register
+    data = Register()
+
+    # Create step and run
+    step = CreateConstrCalculateMetric()
+    step.run(data, model, var_register)
+
+    # Verify constraints: metric >= each base
+    # To test, we set base variables and minimize metric
+    # The optimal metric should be max(base1, base2, base3) = 20
+    model.Add(base1 == 5)
+    model.Add(base2 == 20)
+    model.Add(base3 == 15)
+    model.Minimize(metric_var)
+
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+    # Metric should be >= 20 (the maximum), and minimized so equals 20
+    assert metric_var.solution_value() == 20.0
