@@ -303,7 +303,7 @@ class CreateConstrCalculateMetric(CreateConstr):
                     elif metric is Register.MAX:
                         # metric_var >= each base_var (lower bound for maximum)
                         metric_var = var[v][dimension][index]
-                        base_index_prefix = ()
+                        base_index_prefix = index[:-1]
 
                         for base_index in var.select(v, dimension_, base_index_prefix):
                             base_var = var[v][dimension_][base_index]
@@ -315,7 +315,7 @@ class CreateConstrCalculateMetric(CreateConstr):
                     elif metric is Register.MIN:
                         # metric_var <= each base_var (upper bound for minimum)
                         metric_var = var[v][dimension][index]
-                        base_index_prefix = ()
+                        base_index_prefix = index[:-1]
 
                         for base_index in var.select(v, dimension_, base_index_prefix):
                             base_var = var[v][dimension_][base_index]
@@ -329,7 +329,7 @@ class CreateConstrCalculateMetric(CreateConstr):
                         # Implemented as: metric_var >= base_var1 - base_var2 AND metric_var >= base_var2 - base_var1
                         # which is equivalent to: metric_var >= abs(base_var1 - base_var2)
                         metric_var = var[v][dimension][index]
-                        base_index_prefix = ()
+                        base_index_prefix = index[:-1]
                         base_indices = list(var.select(v, dimension_, base_index_prefix))
 
                         # Create pairwise constraints for all permutations
