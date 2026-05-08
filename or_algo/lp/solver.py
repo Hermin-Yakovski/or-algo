@@ -9,8 +9,10 @@ if TYPE_CHECKING:
     from ortools.linear_solver import pywraplp
 
 from ortools.linear_solver import pywraplp
-from or_algo.solver import Solver
+
+from ..solver import Solver
 from . import exception
+from .step import CreateConstrCalculateMetric
 
 
 class LpSolver(Solver):
@@ -103,6 +105,8 @@ class LpSolver(Solver):
             BuildLpStepException: If a build step fails
             LpModelOptimizeException: If optimization fails or no solution is found
         """
+        self.append(CreateConstrCalculateMetric,)
+
         # Execute build steps
         for step_type, args, kwargs in self._build_steps:
             try:
