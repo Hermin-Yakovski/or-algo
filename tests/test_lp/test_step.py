@@ -449,3 +449,43 @@ def test_create_constr_calculate_metric_range():
     assert status == pywraplp.Solver.OPTIMAL
     # Metric should be >= 15 (max - min), and minimized so equals 15
     assert metric_var.solution_value() == 15.0
+
+
+def test_create_constr_calculate_metric_unknown_metric():
+    """Test that unknown metric type raises BuildLpStepException."""
+    from or_algo.lp.step import CreateConstrCalculateMetric
+    from or_algo.lp.symbol import Var
+    from or_algo.lp.exception import BuildLpStepException
+    from register import Register, Parameter, Dimension, Metric
+    from ortools.linear_solver import pywraplp
+    import pytest
+
+    # Create mock parameter
+    mock_param = Mock(spec=Parameter)
+    mock_param.vtype = float
+
+    # Create dimensions
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    # Create variable symbol
+    var_symbol = Var(p=mock_param, sign='x')
+
+    # Create solver
+    model = pywraplp.Solver.CreateSolver('CBC')
+
+    # Create metric variable
+    metric_var = model.NumVar(0, 100, 'x_unknown')
+
+    # Create register with metric variable using unknown metric type
+    var_register = Register()
+    var_register[var_symbol][(test_dim, Metric)][(0, "UNKNOWN_METRIC")] = metric_var
+
+    # Create data register
+    data = Register()
+
+    # Create step
+    step = CreateConstrCalculateMetric()
+
+    # Should raise BuildLpStepException for unknown metric type
+    with pytest.raises(BuildLpStepException, match="Unknown metric type"):
+        step.run(data, model, var_register)
