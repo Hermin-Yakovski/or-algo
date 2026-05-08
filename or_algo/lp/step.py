@@ -258,12 +258,27 @@ class CreateConstrCalculateMetric(CreateConstr):
         model: "pywraplp.Solver",
         var: "Register[Symbol]"
     ) -> None:
-        """Create metric aggregation constraints in the model.
+        """Create metric aggregation constraints for variables with Metric dimension.
 
         Args:
             data: Register containing input parameters
             model: OR-Tools solver instance
             var: Register for storing variables/constraints
         """
-        pass
+        from register import Register as Reg
+        from register import Metric
+        from or_algo.lp.symbol import Var
+        from ortools.linear_solver import pywraplp
+
+        # Iterate through all Var instances in var
+        for var_symbol in [v for v in var if isinstance(v, Var)]:
+            # Check each dimension for Metric
+            for dimension in var[var_symbol]:
+                # Skip if last dimension is not Metric
+                if not dimension or dimension[-1] is not Metric:
+                    continue
+
+                # TODO: Create constraints based on metric type
+                # This will be implemented in subsequent tasks
+                pass
 

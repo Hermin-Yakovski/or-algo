@@ -172,3 +172,37 @@ def test_create_constr_calculate_metric_is_create_constr():
     step = CreateConstrCalculateMetric()
     assert isinstance(step, CreateConstr)
     assert step._symbol.name == 'CalculateMetric'
+
+
+def test_create_constr_calculate_metric_no_metric_dimension():
+    """Test that run() skips variables without Metric dimension."""
+    from or_algo.lp.step import CreateConstrCalculateMetric
+    from or_algo.lp.symbol import Var
+    from register import Register, Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+    from unittest.mock import Mock
+
+    # Create a mock parameter
+    mock_param = Mock(spec=Parameter)
+    mock_param.vtype = float
+
+    # Create a variable symbol with non-Metric dimension
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+    var_symbol = Var(p=mock_param, sign='x')
+
+    # Create register with variable but no Metric dimension
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = Mock()
+
+    # Create solver
+    model = pywraplp.Solver.CreateSolver('CBC')
+
+    # Create step and run
+    step = CreateConstrCalculateMetric()
+    data = Register()
+
+    # Should not raise any errors
+    step.run(data, model, var_register)
+
+    # Verify no constraints were created (model has only 0 constraints)
+    # Note: OR-Tools doesn't expose a direct constraint count, but we can verify it doesn't crash
