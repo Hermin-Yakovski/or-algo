@@ -2,14 +2,14 @@
 
 import itertools
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Callable, Any
+from typing import TYPE_CHECKING, Optional, Callable
 
 from or_algo.lp import exception as lp_exception
 
 if TYPE_CHECKING:
     from register import Register
     from register import Parameter
-    from register import Dimension, DimensionAsKey, Metric, Method
+    from register import Dimension, Metric
     from or_algo.lp.symbol import Symbol, Var, Constr
     from ortools.linear_solver import pywraplp
 
