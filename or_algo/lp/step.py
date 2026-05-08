@@ -278,7 +278,44 @@ class CreateConstrCalculateMetric(CreateConstr):
                 if not dimension or dimension[-1] is not Metric:
                     continue
 
-                # TODO: Create constraints based on metric type
-                # This will be implemented in subsequent tasks
-                pass
+                # Extract base dimension (all except last)
+                dimension_ = dimension[:-1]
+
+                # Process each index in the metric dimension
+                for index in var[var_symbol][dimension]:
+                    metric = index[-1]
+
+                    # Create constraint based on metric type
+                    if metric is Reg.SUM:
+                        # metric_var == sum(base_vars)
+                        metric_var = var[var_symbol][dimension][index]
+
+                        # Sum all base variables in the base dimension
+                        base_vars = [
+                            var[var_symbol][dimension_][base_index]
+                            for base_index in var[var_symbol][dimension_]
+                        ]
+
+                        # Create equality constraint
+                        constraint = model.Add(
+                            metric_var == sum(base_vars),
+                            name=f'{self._symbol.name}-{var_symbol.sign}({",".join(d.sign for d in dimension)})({",".join(str(ix) for ix in index)})_'
+                        )
+
+                    elif metric is Reg.MAX:
+                        # TODO: Implement in next task
+                        pass
+
+                    elif metric is Reg.MIN:
+                        # TODO: Implement in next task
+                        pass
+
+                    elif metric is Reg.RANGE:
+                        # TODO: Implement in next task
+                        pass
+
+                    else:
+                        raise lp_exception.BuildLpStepException(
+                            f"Unknown metric type: {metric}. Expected SUM, MAX, MIN, or RANGE."
+                        )
 

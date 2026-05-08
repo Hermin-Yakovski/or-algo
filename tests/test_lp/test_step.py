@@ -206,3 +206,59 @@ def test_create_constr_calculate_metric_no_metric_dimension():
 
     # Verify no constraints were created (model has only 0 constraints)
     # Note: OR-Tools doesn't expose a direct constraint count, but we can verify it doesn't crash
+
+
+def test_create_constr_calculate_metric_sum():
+    """Test that SUM metric creates equality constraint with sum of base variables."""
+    from or_algo.lp.step import CreateConstrCalculateMetric
+    from or_algo.lp.symbol import Var
+    from register import Register, Parameter, Dimension, Metric
+    from ortools.linear_solver import pywraplp
+
+    # Create mock parameter
+    mock_param = Mock(spec=Parameter)
+    mock_param.vtype = float
+
+    # Create dimensions
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    # Create variable symbol
+    var_symbol = Var(p=mock_param, sign='x')
+
+    # Create solver
+    model = pywraplp.Solver.CreateSolver('CBC')
+
+    # Create base variables
+    base1 = model.NumVar(0, 10, 'x_base1')
+    base2 = model.NumVar(0, 10, 'x_base2')
+    base3 = model.NumVar(0, 10, 'x_base3')
+
+    # Create metric variable
+    metric_var = model.NumVar(0, 100, 'x_sum')
+
+    # Create register with base and metric variables
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = base1
+    var_register[var_symbol][(test_dim,)][(1,)] = base2
+    var_register[var_symbol][(test_dim,)][(2,)] = base3
+    var_register[var_symbol][(test_dim, Metric)][(0, Register.SUM)] = metric_var
+
+    # Create data register with primary key
+    data = Register()
+    data[Parameter][(test_dim,)][(0,)] = (0,)
+    data[Parameter][(test_dim,)][(1,)] = (1,)
+    data[Parameter][(test_dim,)][(2,)] = (2,)
+
+    # Create step and run
+    step = CreateConstrCalculateMetric()
+    step.run(data, model, var_register)
+
+    # Verify constraint was created by solving and checking
+    # If base1=1, base2=2, base3=3, then metric_var should equal 6
+    model.Add(base1 == 1)
+    model.Add(base2 == 2)
+    model.Add(base3 == 3)
+
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+    assert metric_var.solution_value() == 6.0
