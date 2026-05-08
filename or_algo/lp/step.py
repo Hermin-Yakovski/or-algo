@@ -330,8 +330,21 @@ class CreateConstrCalculateMetric(CreateConstr):
                             )
 
                     elif metric is Reg.RANGE:
-                        # TODO: Implement in next task
-                        pass
+                        # metric_var >= |base_var1 - base_var2| for all pairs
+                        # Implemented as: metric_var >= base_var1 - base_var2 AND metric_var >= base_var2 - base_var1
+                        # which is equivalent to: metric_var >= abs(base_var1 - base_var2)
+                        metric_var = var[var_symbol][dimension][index]
+                        base_index_prefix = ()
+                        base_indices = list(var.select(var_symbol, dimension_, base_index_prefix))
+
+                        # Create pairwise constraints for all permutations
+                        for index1, index2 in itertools.permutations(base_indices, 2):
+                            base_var1 = var[var_symbol][dimension_][index1]
+                            base_var2 = var[var_symbol][dimension_][index2]
+                            model.Add(
+                                metric_var >= base_var1 - base_var2,
+                                name=f'{self._symbol.name}-{var_symbol.sign}({",".join(d.sign for d in dimension_ * 2)})({",".join(str(ix) for ix in index1 + index2)})'
+                            )
 
                     else:
                         raise lp_exception.BuildLpStepException(

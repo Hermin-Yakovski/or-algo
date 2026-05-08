@@ -394,3 +394,58 @@ def test_create_constr_calculate_metric_min():
     assert status == pywraplp.Solver.OPTIMAL
     # Metric should be <= 10 (the minimum), and maximized so equals 10
     assert metric_var.solution_value() == 10.0
+
+
+def test_create_constr_calculate_metric_range():
+    """Test that RANGE metric creates pairwise difference constraints."""
+    from or_algo.lp.step import CreateConstrCalculateMetric
+    from or_algo.lp.symbol import Var
+    from register import Register, Parameter, Dimension, Metric
+    from ortools.linear_solver import pywraplp
+
+    # Create mock parameter
+    mock_param = Mock(spec=Parameter)
+    mock_param.vtype = float
+
+    # Create dimensions
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    # Create variable symbol
+    var_symbol = Var(p=mock_param, sign='x')
+
+    # Create solver
+    model = pywraplp.Solver.CreateSolver('CBC')
+
+    # Create base variables
+    base1 = model.NumVar(0, 100, 'x_base1')
+    base2 = model.NumVar(0, 100, 'x_base2')
+    base3 = model.NumVar(0, 100, 'x_base3')
+
+    # Create metric variable
+    metric_var = model.NumVar(0, 100, 'x_range')
+
+    # Create register with base and metric variables
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = base1
+    var_register[var_symbol][(test_dim,)][(1,)] = base2
+    var_register[var_symbol][(test_dim,)][(2,)] = base3
+    var_register[var_symbol][(test_dim, Metric)][(0, Register.RANGE)] = metric_var
+
+    # Create data register
+    data = Register()
+
+    # Create step and run
+    step = CreateConstrCalculateMetric()
+    step.run(data, model, var_register)
+
+    # Set values: base1=10, base2=25, base3=15
+    # Range should be max - min = 25 - 10 = 15
+    model.Add(base1 == 10)
+    model.Add(base2 == 25)
+    model.Add(base3 == 15)
+    model.Minimize(metric_var)
+
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+    # Metric should be >= 15 (max - min), and minimized so equals 15
+    assert metric_var.solution_value() == 15.0

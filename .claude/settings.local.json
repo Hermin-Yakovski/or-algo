@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(pytest *)",
+      "Bash(mypy *)",
+      "Bash(ruff check *)",
+      "Bash(pip install *)",
+      "Bash(poetry run *)",
+      "Bash(poetry show *)",
+      "Bash(poetry install *)",
+      "Bash(.venv/Scripts/pip install *)",
+      "Bash(.venv/Scripts/python.exe -m pip install dist/*.whl)",
+      "Bash(poetry run *)",
+      "Bash(poetry lock *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(poetry *)",
+      "Bash(python -c \"import or_scenario; print\\(or_scenario.__version__\\)\")",
+      "Bash(python -c \"from or_scenario import Scenario; print\\('Scenario importable'\\)\")",
+      "Bash(git commit *)",
+      "Bash(python -c \"import or_scenario; print\\(or_scenario.__version__\\); print\\(or_scenario.__all__\\)\")",
+      "Bash(git ls-tree *)",
+      "Bash(pytest *)",
+      "Bash(mypy *)",
+      "Bash(ruff check *)",
+      "Bash(python *)"
+    ]
+  }
+}
