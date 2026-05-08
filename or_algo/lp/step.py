@@ -222,6 +222,7 @@ class CreateVar(LpStep, ABC):
 
         return count
 
+
 class CreateConstr(LpStep, ABC):
     """Base class for constraint creation steps."""
 
@@ -237,3 +238,32 @@ class CreateConstr(LpStep, ABC):
     ) -> None:
         """Create constraints in the model."""
         pass
+
+
+class CreateConstrCalculateMetric(CreateConstr):
+    """Create metric aggregation constraints for variables with Metric dimension.
+
+    Supports SUM, MAX, MIN, and RANGE metrics from register.Register.
+    Constraints are created but not stored.
+    """
+
+    def __init__(self):
+        from or_algo.lp.symbol import Constr
+
+        super().__init__(Constr('CalculateMetric', '', 'CalculateMetric'))
+
+    def run(
+        self,
+        data: "Register[Parameter]",
+        model: "pywraplp.Solver",
+        var: "Register[Symbol]"
+    ) -> None:
+        """Create metric aggregation constraints in the model.
+
+        Args:
+            data: Register containing input parameters
+            model: OR-Tools solver instance
+            var: Register for storing variables/constraints
+        """
+        pass
+

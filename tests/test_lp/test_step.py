@@ -161,3 +161,14 @@ def test_create_constr_concrete_subclass():
 
     step = ConcreteCreateConstr(symbol=constr_symbol)
     assert step._symbol is constr_symbol
+
+
+def test_create_constr_calculate_metric_is_create_constr():
+    """Test that CreateConstrCalculateMetric is a CreateConstr subclass."""
+    from or_algo.lp.step import CreateConstr, CreateConstrCalculateMetric
+
+    assert issubclass(CreateConstrCalculateMetric, CreateConstr)
+
+    step = CreateConstrCalculateMetric()
+    assert isinstance(step, CreateConstr)
+    assert step._symbol.name == 'CalculateMetric'
