@@ -229,19 +229,34 @@ def test_create_constr_calculate_metric_sum():
     model = pywraplp.Solver.CreateSolver('CBC')
 
     # Create base variables
-    base1 = model.NumVar(0, 10, 'x_base1')
-    base2 = model.NumVar(0, 10, 'x_base2')
-    base3 = model.NumVar(0, 10, 'x_base3')
+    base1_0 = model.NumVar(0, 10, 'x_base1_0')
+    base1_1 = model.NumVar(0, 10, 'x_base1_1')
+    base1_2 = model.NumVar(0, 10, 'x_base1_2')
 
-    # Create metric variable
-    metric_var = model.NumVar(0, 100, 'x_sum')
+    base2_0 = model.NumVar(0, 10, 'x_base2_0')
+    base2_1 = model.NumVar(0, 10, 'x_base2_1')
+    base2_2 = model.NumVar(0, 10, 'x_base2_2')
+
+    base3_0 = model.NumVar(0, 10, 'x_base3_0')
+    base3_1 = model.NumVar(0, 10, 'x_base3_1')
+    base3_2 = model.NumVar(0, 10, 'x_base3_2')
+
+    # Create metric variables - one for each base index
+    metric_var_0 = model.NumVar(0, 100, 'x_sum_0')
+    metric_var_1 = model.NumVar(0, 100, 'x_sum_1')
+    metric_var_2 = model.NumVar(0, 100, 'x_sum_2')
 
     # Create register with base and metric variables
     var_register = Register()
-    var_register[var_symbol][(test_dim,)][(0,)] = base1
-    var_register[var_symbol][(test_dim,)][(1,)] = base2
-    var_register[var_symbol][(test_dim,)][(2,)] = base3
-    var_register[var_symbol][(test_dim, Metric)][(0, Register.SUM)] = metric_var
+    # Base variables at dimension (test_dim,)
+    var_register[var_symbol][(test_dim,)][(0,)] = base1_0
+    var_register[var_symbol][(test_dim,)][(1,)] = base1_1
+    var_register[var_symbol][(test_dim,)][(2,)] = base1_2
+
+    # Metric variables at dimension (test_dim, Metric)
+    var_register[var_symbol][(test_dim, Metric)][(0, Register.SUM)] = metric_var_0
+    var_register[var_symbol][(test_dim, Metric)][(1, Register.SUM)] = metric_var_1
+    var_register[var_symbol][(test_dim, Metric)][(2, Register.SUM)] = metric_var_2
 
     # Create data register with primary key
     data = Register()
@@ -254,11 +269,16 @@ def test_create_constr_calculate_metric_sum():
     step.run(data, model, var_register)
 
     # Verify constraint was created by solving and checking
-    # If base1=1, base2=2, base3=3, then metric_var should equal 6
-    model.Add(base1 == 1)
-    model.Add(base2 == 2)
-    model.Add(base3 == 3)
+    # Each metric variable should sum only base variables with matching prefix
+    model.Add(base1_0 == 1)
+    model.Add(base1_1 == 2)
+    model.Add(base1_2 == 3)
 
     status = model.Solve()
     assert status == pywraplp.Solver.OPTIMAL
-    assert metric_var.solution_value() == 6.0
+    # metric_var_0 sums base vars with prefix (0,) -> only base1_0 = 1
+    assert metric_var_0.solution_value() == 1.0
+    # metric_var_1 sums base vars with prefix (1,) -> only base1_1 = 2
+    assert metric_var_1.solution_value() == 2.0
+    # metric_var_2 sums base vars with prefix (2,) -> only base1_2 = 3
+    assert metric_var_2.solution_value() == 3.0

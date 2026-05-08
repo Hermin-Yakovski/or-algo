@@ -290,10 +290,13 @@ class CreateConstrCalculateMetric(CreateConstr):
                         # metric_var == sum(base_vars)
                         metric_var = var[var_symbol][dimension][index]
 
-                        # Sum all base variables in the base dimension
+                        # Get base indices by removing last element (metric type)
+                        base_index_prefix = index[:-1]
+
+                        # Sum all base variables that match the prefix
                         base_vars = [
                             var[var_symbol][dimension_][base_index]
-                            for base_index in var[var_symbol][dimension_]
+                            for base_index in var.select(var_symbol, dimension_, base_index_prefix)
                         ]
 
                         # Create equality constraint
