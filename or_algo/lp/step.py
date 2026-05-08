@@ -1,18 +1,16 @@
 """LpStep hierarchy for LP model building."""
-
-import itertools
 from abc import ABC, abstractmethod
+import itertools
 from typing import TYPE_CHECKING, Optional, Callable
 
-from or_algo.lp import exception as lp_exception
+from register import Register, Metric
+
+from . import exception
 
 if TYPE_CHECKING:
-    from register import Register
-    from register import Parameter
-    from register import Dimension, Metric
-    from or_algo.lp.symbol import Symbol, Var, Constr
     from ortools.linear_solver import pywraplp
-
+    from register import Dimension, Parameter
+    from .symbol import Symbol, Var, Constr
 
 class LpStep(ABC):
     """Abstract base class for LP model building steps."""
@@ -153,7 +151,7 @@ class CreateVar(LpStep, ABC):
         elif which is None:
             which_ = tuple(True for _ in dimension)
         elif len(which) != len(dimension):
-            raise lp_exception.BuildLpStepException(f"Invalid argument of CreateVars.create: length of which and dimension must be equal."
+            raise exception.BuildLpStepException(f"Invalid argument of CreateVars.create: length of which and dimension must be equal."
                 f"Got dimension={dimension}, which={which} when creating variable {self._symbol}")
         else:
             which_ = tuple(which)
@@ -265,15 +263,12 @@ class CreateConstrCalculateMetric(CreateConstr):
             model: OR-Tools solver instance
             var: Register for storing variables/constraints
         """
-        from register import Register as Reg
-        from register import Metric
         from or_algo.lp.symbol import Var
-        from ortools.linear_solver import pywraplp
 
         # Iterate through all Var instances in var
-        for var_symbol in [v for v in var if isinstance(v, Var)]:
+        for v in var:
             # Check each dimension for Metric
-            for dimension in var[var_symbol]:
+            for dimension in var[v]:
                 # Skip if last dimension is not Metric
                 if not dimension or dimension[-1] is not Metric:
                     continue
@@ -282,72 +277,72 @@ class CreateConstrCalculateMetric(CreateConstr):
                 dimension_ = dimension[:-1]
 
                 # Process each index in the metric dimension
-                for index in var[var_symbol][dimension]:
+                for index in var[v][dimension]:
                     metric = index[-1]
 
                     # Create constraint based on metric type
-                    if metric is Reg.SUM:
+                    if metric is Register.SUM:
                         # metric_var == sum(base_vars)
-                        metric_var = var[var_symbol][dimension][index]
+                        metric_var = var[v][dimension][index]
 
                         # Get base indices by removing last element (metric type)
                         base_index_prefix = index[:-1]
 
                         # Sum all base variables that match the prefix
                         base_vars = [
-                            var[var_symbol][dimension_][base_index]
-                            for base_index in var.select(var_symbol, dimension_, base_index_prefix)
+                            var[v][dimension_][base_index]
+                            for base_index in var.select(v, dimension_, base_index_prefix)
                         ]
 
                         # Create equality constraint
                         constraint = model.Add(
                             metric_var == sum(base_vars),
-                            name=f'{self._symbol.name}-{var_symbol.sign}({",".join(d.sign for d in dimension)})({",".join(str(ix) for ix in index)})_'
+                            name=f'{self._symbol.name}-{v.sign}({",".join(d.sign for d in dimension)})({",".join(str(ix) for ix in index)})_'
                         )
 
-                    elif metric is Reg.MAX:
+                    elif metric is Register.MAX:
                         # metric_var >= each base_var (lower bound for maximum)
-                        metric_var = var[var_symbol][dimension][index]
+                        metric_var = var[v][dimension][index]
                         base_index_prefix = ()
 
-                        for base_index in var.select(var_symbol, dimension_, base_index_prefix):
-                            base_var = var[var_symbol][dimension_][base_index]
+                        for base_index in var.select(v, dimension_, base_index_prefix):
+                            base_var = var[v][dimension_][base_index]
                             model.Add(
                                 metric_var >= base_var,
-                                name=f'{self._symbol.name}-{var_symbol.sign}({",".join(d.sign for d in dimension_)})({",".join(str(ix) for ix in base_index)})'
+                                name=f'{self._symbol.name}-{v.sign}({",".join(d.sign for d in dimension_)})({",".join(str(ix) for ix in base_index)})'
                             )
 
-                    elif metric is Reg.MIN:
+                    elif metric is Register.MIN:
                         # metric_var <= each base_var (upper bound for minimum)
-                        metric_var = var[var_symbol][dimension][index]
+                        metric_var = var[v][dimension][index]
                         base_index_prefix = ()
 
-                        for base_index in var.select(var_symbol, dimension_, base_index_prefix):
-                            base_var = var[var_symbol][dimension_][base_index]
+                        for base_index in var.select(v, dimension_, base_index_prefix):
+                            base_var = var[v][dimension_][base_index]
                             model.Add(
                                 metric_var <= base_var,
-                                name=f'{self._symbol.name}-{var_symbol.sign}({",".join(d.sign for d in dimension_)})({",".join(str(ix) for ix in base_index)})'
+                                name=f'{self._symbol.name}-{v.sign}({",".join(d.sign for d in dimension_)})({",".join(str(ix) for ix in base_index)})'
                             )
 
-                    elif metric is Reg.RANGE:
+                    elif metric is Register.RANGE:
                         # metric_var >= |base_var1 - base_var2| for all pairs
                         # Implemented as: metric_var >= base_var1 - base_var2 AND metric_var >= base_var2 - base_var1
                         # which is equivalent to: metric_var >= abs(base_var1 - base_var2)
-                        metric_var = var[var_symbol][dimension][index]
+                        metric_var = var[v][dimension][index]
                         base_index_prefix = ()
-                        base_indices = list(var.select(var_symbol, dimension_, base_index_prefix))
+                        base_indices = list(var.select(v, dimension_, base_index_prefix))
 
                         # Create pairwise constraints for all permutations
                         for index1, index2 in itertools.permutations(base_indices, 2):
-                            base_var1 = var[var_symbol][dimension_][index1]
-                            base_var2 = var[var_symbol][dimension_][index2]
+                            base_var1 = var[v][dimension_][index1]
+                            base_var2 = var[v][dimension_][index2]
                             model.Add(
                                 metric_var >= base_var1 - base_var2,
-                                name=f'{self._symbol.name}-{var_symbol.sign}({",".join(d.sign for d in dimension_ * 2)})({",".join(str(ix) for ix in index1 + index2)})'
+                                name=f'{self._symbol.name}-{v.sign}({",".join(d.sign for d in dimension_ * 2)})({",".join(str(ix) for ix in index1 + index2)})'
                             )
 
                     else:
-                        raise lp_exception.BuildLpStepException(
+                        raise exception.BuildLpStepException(
                             f"Unknown metric type: {metric}. Expected SUM, MAX, MIN, or RANGE."
                         )
 
