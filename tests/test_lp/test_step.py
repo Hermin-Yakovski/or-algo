@@ -338,3 +338,59 @@ def test_create_constr_calculate_metric_max():
     assert status == pywraplp.Solver.OPTIMAL
     # Metric should be >= 20 (the maximum), and minimized so equals 20
     assert metric_var.solution_value() == 20.0
+
+
+def test_create_constr_calculate_metric_min():
+    """Test that MIN metric creates upper bound constraints (metric <= each base)."""
+    from or_algo.lp.step import CreateConstrCalculateMetric
+    from or_algo.lp.symbol import Var
+    from register import Register, Parameter, Dimension, Metric
+    from ortools.linear_solver import pywraplp
+
+    # Create mock parameter
+    mock_param = Mock(spec=Parameter)
+    mock_param.vtype = float
+
+    # Create dimensions
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    # Create variable symbol
+    var_symbol = Var(p=mock_param, sign='x')
+
+    # Create solver
+    model = pywraplp.Solver.CreateSolver('CBC')
+
+    # Create base variables
+    base1 = model.NumVar(10, 100, 'x_base1')
+    base2 = model.NumVar(20, 100, 'x_base2')
+    base3 = model.NumVar(15, 100, 'x_base3')
+
+    # Create metric variable
+    metric_var = model.NumVar(0, 100, 'x_min')
+
+    # Create register with base and metric variables
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = base1
+    var_register[var_symbol][(test_dim,)][(1,)] = base2
+    var_register[var_symbol][(test_dim,)][(2,)] = base3
+    var_register[var_symbol][(test_dim, Metric)][(0, Register.MIN)] = metric_var
+
+    # Create data register
+    data = Register()
+
+    # Create step and run
+    step = CreateConstrCalculateMetric()
+    step.run(data, model, var_register)
+
+    # Verify constraints: metric <= each base
+    # To test, we set base variables and maximize metric
+    # The optimal metric should be min(base1, base2, base3) = 10
+    model.Add(base1 == 10)
+    model.Add(base2 == 20)
+    model.Add(base3 == 15)
+    model.Maximize(metric_var)
+
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+    # Metric should be <= 10 (the minimum), and maximized so equals 10
+    assert metric_var.solution_value() == 10.0

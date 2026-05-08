@@ -318,8 +318,16 @@ class CreateConstrCalculateMetric(CreateConstr):
                             )
 
                     elif metric is Reg.MIN:
-                        # TODO: Implement in next task
-                        pass
+                        # metric_var <= each base_var (upper bound for minimum)
+                        metric_var = var[var_symbol][dimension][index]
+                        base_index_prefix = ()
+
+                        for base_index in var.select(var_symbol, dimension_, base_index_prefix):
+                            base_var = var[var_symbol][dimension_][base_index]
+                            model.Add(
+                                metric_var <= base_var,
+                                name=f'{self._symbol.name}-{var_symbol.sign}({",".join(d.sign for d in dimension_)})({",".join(str(ix) for ix in base_index)})'
+                            )
 
                     elif metric is Reg.RANGE:
                         # TODO: Implement in next task
