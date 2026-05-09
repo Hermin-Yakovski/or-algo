@@ -114,6 +114,7 @@ class Algorithm:
         """
         for var in source:
             for dimensions in source[var]:
+                target[var][dimensions].clear()
                 target[var][dimensions].update(source[var][dimensions])
 
     def solve(self, data: Register[Parameter]) -> None:
