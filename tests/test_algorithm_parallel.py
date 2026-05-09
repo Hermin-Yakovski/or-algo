@@ -6,7 +6,6 @@ from register import Register, Parameter, Id, Index
 from or_algo.solver import Solver
 from or_algo.algorithm import Algorithm
 from or_algo.exception import OrAlgoException
-from or_algo.shared_register import SharedRegister
 
 
 class MarkerSolver(Solver):
@@ -16,14 +15,15 @@ class MarkerSolver(Solver):
         super().__init__()
         self.marker = marker
 
-    def solve(self, data: Register[Parameter]) -> None:
+    def solve(self, data: Register[Parameter]) -> Register[Parameter]:
         data[Id][(Index,)][(0,)] = self.marker
+        return data
 
 
 class FailingSolver(Solver):
     """A solver that always fails."""
 
-    def solve(self, data: Register[Parameter]) -> None:
+    def solve(self, data: Register[Parameter]) -> Register[Parameter]:
         raise ValueError("intentional failure")
 
 
@@ -39,11 +39,11 @@ def test_parallel_solve_cycle_detection():
     algo._dependency_graph[2] = [1]
     algo._dependency_graph[3] = [2]
 
-    data = SharedRegister[Parameter]()
+    reg = Register[Parameter]()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         with pytest.raises(OrAlgoException) as exc_info:
-            algo.parallel_solve(data, executor)
+            algo.parallel_solve(reg, executor)
 
     assert "cycle" in str(exc_info.value).lower()
 
@@ -56,11 +56,11 @@ def test_parallel_solve_self_loop_detection():
     # Create a self-loop
     algo._dependency_graph[1] = [1]
 
-    data = SharedRegister[Parameter]()
+    reg = Register[Parameter]()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         with pytest.raises(OrAlgoException) as exc_info:
-            algo.parallel_solve(data, executor)
+            algo.parallel_solve(reg, executor)
 
     assert "cycle" in str(exc_info.value).lower()
 
@@ -68,27 +68,24 @@ def test_parallel_solve_self_loop_detection():
 def test_parallel_solve_empty_algorithm():
     """Test that parallel_solve handles an empty algorithm gracefully."""
     algo = Algorithm()
-    data = SharedRegister[Parameter]()
+    reg = Register[Parameter]()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
-        result = algo.parallel_solve(data, executor)
-
-    # Should return the same SharedRegister unchanged
-    assert result is data
+        algo.parallel_solve(reg, executor)
+    # reg is modified in place
 
 
 def test_parallel_solve_returns_same_register():
-    """Test that parallel_solve returns the same SharedRegister instance."""
+    """Test that parallel_solve modifies Register in place."""
     algo = Algorithm()
     algo.append(MarkerSolver, "test")
 
-    data = SharedRegister[Parameter]()
+    reg = Register[Parameter]()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
-        result = algo.parallel_solve(data, executor)
-
-    # Should return the exact same instance
-    assert result is data
+        algo.parallel_solve(reg, executor)
+    # reg is modified in place
+    assert reg[Id][(Index,)][(0,)] == "test"
 
 
 def test_parallel_solve_task_creation():
@@ -97,15 +94,13 @@ def test_parallel_solve_task_creation():
     algo.append(MarkerSolver, "task1", after=[])
     algo.append(MarkerSolver, "task2", after=[1])
 
-    from multiprocessing import Manager
-    manager = Manager()
-    data = SharedRegister[Parameter].create(manager)
+    reg = Register[Parameter]()
 
     # This should not raise an exception during task creation
     # (it will fail during execution due to pickling issues, but that's expected)
     with ProcessPoolExecutor(max_workers=2) as executor:
         try:
-            algo.parallel_solve(data, executor)
+            algo.parallel_solve(reg, executor)
         except (OrAlgoException, KeyError, TypeError):
             # Expected to fail during execution due to Register pickling issues
             pass
@@ -119,11 +114,11 @@ def test_parallel_solve_dag_validation_before_execution():
 
     # Don't create a cycle, so validation should pass
     # The tasks will fail during execution, but that's after validation
-    data = SharedRegister[Parameter]()
+    reg = Register[Parameter]()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         try:
-            algo.parallel_solve(data, executor)
+            algo.parallel_solve(reg, executor)
         except (OrAlgoException, KeyError, TypeError):
             # Expected to fail during execution
             pass
