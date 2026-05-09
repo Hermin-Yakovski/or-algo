@@ -3,7 +3,6 @@
 from .solver import Solver
 from .algorithm import Algorithm
 from .exception import OrAlgoException
-from . import lp
 
 __version__ = "0.2.0"
 
@@ -13,3 +12,11 @@ __all__ = [
     "OrAlgoException",
     "lp",
 ]
+
+
+def __getattr__(name: str):
+    """Lazy import lp module to avoid ortools import issues in multiprocessing."""
+    if name == "lp":
+        from . import lp
+        return lp
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -3,9 +3,12 @@
 from typing import Any, Optional, Type
 from register import Register, Parameter
 
+from concurrent.futures import ProcessPoolExecutor, as_completed, Future
+
 from .solver import Solver
 from .exception import OrAlgoException
 from .task import SolverTask
+from .shared_register import SharedRegister
 
 
 class Algorithm:
@@ -116,3 +119,69 @@ class Algorithm:
                 raise OrAlgoException(
                     f"Failed {solver.__name__}.solve()! args={args}, kwargs={kwargs}"
                 ) from e
+
+    def parallel_solve(
+        self,
+        data: SharedRegister[Parameter],
+        executor: ProcessPoolExecutor
+    ) -> SharedRegister[Parameter]:
+        """Execute solvers in parallel using DAG-based lazy resolution.
+
+        Args:
+            data: SharedRegister containing input parameters
+            executor: ProcessPoolExecutor for parallel execution
+
+        Returns:
+            The same SharedRegister with solutions written
+
+        Raises:
+            OrAlgoException: If cycle detected or any solver fails
+        """
+        # 1. Validate DAG
+        if self._detect_cycle():
+            raise OrAlgoException("Dependency graph contains a cycle")
+
+        # 2. Build SolverTask wrappers
+        tasks: dict[int, SolverTask] = {}
+        for task_id, (solver_type, args, kwargs) in enumerate(self._solvers, start=1):
+            dependencies = self._dependency_graph.get(task_id, [])
+            tasks[task_id] = SolverTask(solver_type, args, kwargs, dependencies, task_id)
+
+        # 3. Track running futures and completed tasks
+        futures: dict[Future, int] = {}
+        completed: set[int] = set()
+
+        # 4. Submit initially ready tasks
+        for task_id in self._get_ready_tasks(tasks, completed):
+            task = tasks[task_id]
+            future = executor.submit(task.execute, data)
+            futures[future] = task_id
+
+        # 5. Main loop
+        try:
+            while futures:
+                for future in as_completed(futures.keys()):
+                    task_id = futures.pop(future)
+                    task = tasks[task_id]
+
+                    try:
+                        future.result()
+                        completed.add(task_id)
+                    except Exception as e:
+                        for f in futures:
+                            f.cancel()
+                        raise OrAlgoException(
+                            f"Task {task_id} ({task.solver_type.__name__}) failed"
+                        ) from e
+
+                    # Submit newly ready tasks
+                    for ready_id in self._get_ready_tasks(tasks, completed):
+                        if ready_id not in completed and ready_id not in futures.values():
+                            ready_task = tasks[ready_id]
+                            new_future = executor.submit(ready_task.execute, data)
+                            futures[new_future] = ready_id
+
+        except Exception as e:
+            raise OrAlgoException(f"parallel_solve failed: {e}") from e
+
+        return data
