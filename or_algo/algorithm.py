@@ -196,3 +196,5 @@ class Algorithm:
 
         except Exception as e:
             raise OrAlgoException(f"parallel_solve failed: {e}") from e
+
+        return reg
