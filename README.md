@@ -34,7 +34,8 @@ The `Algorithm.parallel_solve()` method enables parallel execution of independen
 
 ```python
 from concurrent.futures import ProcessPoolExecutor
-from or_algo import Algorithm, SharedRegister
+from register import Register, Parameter
+from or_algo import Algorithm
 
 # Build dependency graph
 algo = Algorithm()
@@ -42,16 +43,16 @@ id1 = algo.append(MySolver, "arg1")
 id2 = algo.append(MySolver, "arg2")  # Independent
 id3 = algo.append(MySolver, "arg3", after=[id1])  # Depends on id1
 
-# Create shared register
-shared_reg = SharedRegister()
-shared_reg["input"] = "value"
+# Create register with type annotation
+reg = Register[Parameter]()
+reg["input"] = "value"
 
-# Execute in parallel
+# Execute in parallel (modifies reg in place)
 with ProcessPoolExecutor(max_workers=4) as executor:
-    algo.parallel_solve(shared_reg, executor)
+    algo.parallel_solve(reg, executor)
 
-# Access results
-result = shared_reg["output"]
+# Access results from the modified register
+result = reg["output"]
 ```
 
 ### Dependencies
