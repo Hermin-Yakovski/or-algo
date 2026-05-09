@@ -178,7 +178,8 @@ class Algorithm:
                     task = tasks[task_id]
 
                     try:
-                        future.result()
+                        result_reg = future.result()
+                        self._merge_register(reg, result_reg)
                         completed.add(task_id)
                     except Exception as e:
                         for f in futures:
