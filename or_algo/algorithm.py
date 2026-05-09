@@ -1,5 +1,6 @@
 """Algorithm orchestrator class for or-algo package."""
 
+import pickle
 from typing import Any, Optional, Type
 from register import Register, Parameter
 
@@ -139,7 +140,7 @@ class Algorithm:
         self,
         reg: Register[Parameter],
         executor: ProcessPoolExecutor
-    ) -> Register[Parameter]:  # Will change to -> None in Task 5 when implementing in-place modification
+    ) -> None:
         """Execute solvers in parallel using DAG-based lazy resolution.
 
         Args:
@@ -167,7 +168,8 @@ class Algorithm:
         # 4. Submit initially ready tasks
         for task_id in self._get_ready_tasks(tasks, completed):
             task = tasks[task_id]
-            future = executor.submit(task.execute, reg)
+            reg_copy = pickle.loads(pickle.dumps(reg))
+            future = executor.submit(task.execute, reg_copy)
             futures[future] = task_id
 
         # 5. Main loop
@@ -192,10 +194,11 @@ class Algorithm:
                     for ready_id in self._get_ready_tasks(tasks, completed):
                         if ready_id not in completed and ready_id not in futures.values():
                             ready_task = tasks[ready_id]
-                            new_future = executor.submit(ready_task.execute, reg)
+                            reg_copy = pickle.loads(pickle.dumps(reg))
+                            new_future = executor.submit(ready_task.execute, reg_copy)
                             futures[new_future] = ready_id
 
         except Exception as e:
             raise OrAlgoException(f"parallel_solve failed: {e}") from e
 
-        return reg
+        return
