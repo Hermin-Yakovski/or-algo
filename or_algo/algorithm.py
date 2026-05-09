@@ -8,7 +8,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed, Future
 from .solver import Solver
 from .exception import OrAlgoException
 from .task import SolverTask
-from .shared_register import SharedRegister
 
 
 class Algorithm:
@@ -138,17 +137,15 @@ class Algorithm:
 
     def parallel_solve(
         self,
-        data: SharedRegister[Parameter],
+        reg: Register[Parameter],
         executor: ProcessPoolExecutor
-    ) -> SharedRegister[Parameter]:
+    ) -> None:
         """Execute solvers in parallel using DAG-based lazy resolution.
 
         Args:
-            data: SharedRegister containing input parameters
+            reg: Register containing input parameters; solutions are
+                 merged back into this same Register.
             executor: ProcessPoolExecutor for parallel execution
-
-        Returns:
-            The same SharedRegister with solutions written
 
         Raises:
             OrAlgoException: If cycle detected or any solver fails
@@ -170,7 +167,7 @@ class Algorithm:
         # 4. Submit initially ready tasks
         for task_id in self._get_ready_tasks(tasks, completed):
             task = tasks[task_id]
-            future = executor.submit(task.execute, data)
+            future = executor.submit(task.execute, reg)
             futures[future] = task_id
 
         # 5. Main loop
@@ -194,10 +191,8 @@ class Algorithm:
                     for ready_id in self._get_ready_tasks(tasks, completed):
                         if ready_id not in completed and ready_id not in futures.values():
                             ready_task = tasks[ready_id]
-                            new_future = executor.submit(ready_task.execute, data)
+                            new_future = executor.submit(ready_task.execute, reg)
                             futures[new_future] = ready_id
 
         except Exception as e:
             raise OrAlgoException(f"parallel_solve failed: {e}") from e
-
-        return data
