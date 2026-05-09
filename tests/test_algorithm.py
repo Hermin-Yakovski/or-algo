@@ -368,3 +368,23 @@ def test_algorithm_get_ready_tasks_partial_dependencies():
 
     # Task 3 should be ready (no deps), but not task 4 (missing dep 3)
     assert sorted(ready) == [3]
+
+
+def test_algorithm_merge_register():
+    """Test that _merge_register() merges source into target."""
+    algo = Algorithm()
+
+    # Create source and target registers
+    target = Register[Parameter]()
+    target[Id][(Index,)][(0,)] = "target_value"
+
+    source = Register[Parameter]()
+    source[Id][(Index,)][(1,)] = "source_value"
+    source[Id][(Index,)][(0,)] = "overwrite_value"
+
+    # Merge source into target
+    algo._merge_register(target, source)
+
+    # Target should have both values, with source overwriting
+    assert target[Id][(Index,)][(0,)] == "overwrite_value"
+    assert target[Id][(Index,)][(1,)] == "source_value"

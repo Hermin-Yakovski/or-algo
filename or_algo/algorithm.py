@@ -101,6 +101,21 @@ class Algorithm:
                     ready.append(task_id)
         return ready
 
+    def _merge_register(self, target: Register[Parameter], source: Register[Parameter]) -> None:
+        """Merge source Register into target Register.
+
+        Iterates through all Parameters and dimensions in source,
+        copying the inner dict to target. This preserves Register's
+        nested structure: Parameter -> DimensionAsKey -> dict.
+
+        Args:
+            target: Register to merge into (modified in place)
+            source: Register to merge from
+        """
+        for var in source:
+            for dimensions in source[var]:
+                target[var][dimensions].update(source[var][dimensions])
+
     def solve(self, data: Register[Parameter]) -> None:
         """Execute all solvers in sequence.
 
