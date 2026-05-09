@@ -1,6 +1,5 @@
 """Algorithm orchestrator class for or-algo package."""
 
-import pickle
 from typing import Any, Optional, Type
 from register import Register, Parameter
 
@@ -138,13 +137,13 @@ class Algorithm:
 
     def parallel_solve(
         self,
-        reg: Register[Parameter],
+        data: Register[Parameter],
         executor: ProcessPoolExecutor
     ) -> None:
         """Execute solvers in parallel using DAG-based lazy resolution.
 
         Args:
-            reg: Register containing input parameters; solutions are
+            data: Register containing input parameters; solutions are
                  merged back into this same Register.
             executor: ProcessPoolExecutor for parallel execution
 
@@ -168,8 +167,7 @@ class Algorithm:
         # 4. Submit initially ready tasks
         for task_id in self._get_ready_tasks(tasks, completed):
             task = tasks[task_id]
-            reg_copy = pickle.loads(pickle.dumps(reg))
-            future = executor.submit(task.execute, reg_copy)
+            future = executor.submit(task.execute, data)
             futures[future] = task_id
 
         # 5. Main loop
@@ -180,8 +178,8 @@ class Algorithm:
                     task = tasks[task_id]
 
                     try:
-                        result_reg = future.result()
-                        self._merge_register(reg, result_reg)
+                        solution = future.result()
+                        self._merge_register(data, solution)
                         completed.add(task_id)
                     except Exception as e:
                         for f in futures:
@@ -194,8 +192,7 @@ class Algorithm:
                     for ready_id in self._get_ready_tasks(tasks, completed):
                         if ready_id not in completed and ready_id not in futures.values():
                             ready_task = tasks[ready_id]
-                            reg_copy = pickle.loads(pickle.dumps(reg))
-                            new_future = executor.submit(ready_task.execute, reg_copy)
+                            new_future = executor.submit(ready_task.execute, data)
                             futures[new_future] = ready_id
 
         except Exception as e:
