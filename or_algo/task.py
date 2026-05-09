@@ -50,11 +50,14 @@ class SolverTask:
         self.state = "failed"
         self.exception = exc
 
-    def execute(self, data: Register[Parameter]) -> None:
-        """Run the solver's solve() method.
+    def execute(self, reg: Register[Parameter]) -> Register[Parameter]:
+        """Run solver and return modified Register.
 
         Args:
-            data: Register containing parameters for the solver.
+            reg: Register containing parameters for the solver.
+
+        Returns:
+            The modified Register with solver results.
 
         Raises:
             Exception: If solver.solve() raises an exception.
@@ -62,8 +65,9 @@ class SolverTask:
         self.mark_running()
         try:
             solver = self.solver_type(*self.args, **self.kwargs)
-            solver.solve(data)
+            result = solver.solve(reg)
             self.mark_completed()
+            return result
         except Exception as e:
             self.mark_failed(e)
             raise

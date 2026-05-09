@@ -71,3 +71,15 @@ def test_solver_task_execute_failure():
         task.execute(data)
     assert task.state == "failed"
     assert isinstance(task.exception, ValueError)
+
+
+def test_solver_task_execute_returns_register():
+    """Test that execute() returns the modified Register."""
+    task = SolverTask(DummySolver, (), {}, [], 1)
+    reg = Register[Parameter]()
+    reg._data["test"] = "input"
+
+    result_reg = task.execute(reg)
+
+    assert result_reg is reg  # Returns the same Register instance
+    assert isinstance(result_reg, Register)
