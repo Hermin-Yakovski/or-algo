@@ -4,7 +4,6 @@ from .solver import Solver
 from .algorithm import Algorithm
 from .exception import OrAlgoException
 from .task import SolverTask
-from .shared_register import SharedRegister
 
 __version__ = "0.2.0"
 
@@ -14,7 +13,6 @@ __all__ = [
     "OrAlgoException",
     "lp",
     "SolverTask",
-    "SharedRegister",
 ]
 
 
