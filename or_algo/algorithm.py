@@ -139,7 +139,7 @@ class Algorithm:
         self,
         reg: Register[Parameter],
         executor: ProcessPoolExecutor
-    ) -> None:
+    ) -> Register[Parameter]:  # Will change to -> None in Task 5 when implementing in-place modification
         """Execute solvers in parallel using DAG-based lazy resolution.
 
         Args:
