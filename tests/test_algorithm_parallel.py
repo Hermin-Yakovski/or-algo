@@ -327,37 +327,38 @@ def test_parallel_solve_dependent_tasks_see_merged_results():
     Note: Due to Windows multiprocessing limitations (spawn-based), classes
     defined in test files may not pickle properly. This test structure and
     logic are still valuable for documenting the expected behavior.
-    """
-    order = []
 
-    class OrderAndWriteSolver(Solver):
-        def __init__(self, name: str, write_key: tuple = None, read_key: tuple = None):
+    Note: This test focuses on data merging correctness, not execution order,
+    since module-level state cannot be shared across processes in spawn-based
+    multiprocessing. The key verification is that dependent tasks receive
+    their predecessors' results through Register merging.
+    """
+    class WriteAndReadSolver(Solver):
+        def __init__(self, write_key: tuple = None, read_key: tuple = None, result_value: str = ""):
             super().__init__()
-            self.name = name
             self.write_key = write_key
             self.read_key = read_key
+            self.result_value = result_value
 
         def solve(self, data: Register[Parameter]) -> Register[Parameter]:
-            order.append(self.name)
-
             # Read from predecessor if specified
             if self.read_key:
                 param, dim, idx = self.read_key
                 value = data[param][dim][idx]
-                data[Id][(Index,)][(0,)] = f"{self.name}_saw_{value}"
+                data[Id][(Index,)][(0,)] = f"{self.result_value}_saw_{value}"
 
             # Write our result if specified
             if self.write_key:
                 param, dim, idx = self.write_key
-                data[param][dim][idx] = self.name
+                data[param][dim][idx] = self.result_value
 
             return data
 
     algo = Algorithm()
     # Task A writes "A"
-    id_a = algo.append(OrderAndWriteSolver, "A", (Id, (Index,), (0,)))
+    id_a = algo.append(WriteAndReadSolver, (Id, (Index,), (0,)), result_value="A")
     # Task B reads what A wrote, writes "B"
-    id_b = algo.append(OrderAndWriteSolver, "B", (Id, (Index,), (1,)), (Id, (Index,), (0,)), after=[id_a])
+    id_b = algo.append(WriteAndReadSolver, (Id, (Index,), (1,)), (Id, (Index,), (0,)), result_value="B", after=[id_a])
 
     reg = Register[Parameter]()
 
@@ -365,17 +366,14 @@ def test_parallel_solve_dependent_tasks_see_merged_results():
         with ProcessPoolExecutor(max_workers=2) as executor:
             algo.parallel_solve(reg, executor)
 
-        # If we get here, the test passed (unlikely on Windows due to pickling)
-        # Verify A ran before B
-        assert order.index("A") < order.index("B")
-
         # Verify B saw A's output (B merged A's result)
-        assert reg[Id][(Index,)][(0,)] == "B_saw_A"
-        assert reg[Id][(Index,)][(1,)] == "B"
+        # This confirms Register merging works correctly across dependent tasks
+        assert reg[Id][(Index,)][(0,)] == "B_saw_A", f"Expected 'B_saw_A', got '{reg[Id][(Index,)][(0,)]}'"
+        assert reg[Id][(Index,)][(1,)] == "B", f"Expected 'B', got '{reg[Id][(Index,)][(1,)]}'"
     except (TypeError, AttributeError, OrAlgoException) as e:
         # Expected on Windows due to pickling limitations with classes defined in test files
         # The test structure and logic are still valid
-        if "Can't get local object" in str(e) or "OrderAndWriteSolver" in str(e):
+        if "Can't get local object" in str(e) or "WriteAndReadSolver" in str(e):
             pytest.skip(f"Skipping due to multiprocessing pickling limitation: {e}")
         else:
             raise
