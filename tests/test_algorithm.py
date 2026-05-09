@@ -5,6 +5,7 @@ from register import Register, Parameter, Id, Index
 from or_algo.solver import Solver
 from or_algo.algorithm import Algorithm
 from or_algo.exception import OrAlgoException
+from or_algo.task import SolverTask
 
 
 class SuccessSolver(Solver):
@@ -242,3 +243,128 @@ def test_algorithm_detect_cycle_partial_cycle():
     algo._dependency_graph[4] = []
 
     assert algo._detect_cycle() is True
+
+
+def test_algorithm_get_ready_tasks_initially():
+    """Test that tasks with no dependencies are ready initially."""
+    algo = Algorithm()
+
+    # Create tasks: 1 and 2 have no dependencies, 3 depends on 1 and 2
+    task1 = SolverTask(SuccessSolver, (), {}, [], 1)
+    task2 = SolverTask(SuccessSolver, (), {}, [], 2)
+    task3 = SolverTask(SuccessSolver, (), {}, [1, 2], 3)
+
+    tasks = {1: task1, 2: task2, 3: task3}
+    completed = set()
+
+    ready = algo._get_ready_tasks(tasks, completed)
+
+    # Only tasks 1 and 2 should be ready (no dependencies)
+    assert sorted(ready) == [1, 2]
+
+
+def test_algorithm_get_ready_tasks_after_completion():
+    """Test that dependent tasks become ready after dependencies complete."""
+    algo = Algorithm()
+
+    # Create tasks: 1 and 2 have no dependencies, 3 depends on 1 and 2
+    task1 = SolverTask(SuccessSolver, (), {}, [], 1)
+    task2 = SolverTask(SuccessSolver, (), {}, [], 2)
+    task3 = SolverTask(SuccessSolver, (), {}, [1, 2], 3)
+
+    tasks = {1: task1, 2: task2, 3: task3}
+
+    # After task 1 completes (mark it as completed)
+    task1.state = "completed"
+    completed = {1}
+    ready = algo._get_ready_tasks(tasks, completed)
+
+    # Only task 2 should be ready (task 3 still needs task 2)
+    assert sorted(ready) == [2]
+
+
+def test_algorithm_get_ready_tasks_after_both_dependencies_complete():
+    """Test that task dependent on both becomes ready after both complete."""
+    algo = Algorithm()
+
+    # Create tasks: 1 and 2 have no dependencies, 3 depends on 1 and 2
+    task1 = SolverTask(SuccessSolver, (), {}, [], 1)
+    task2 = SolverTask(SuccessSolver, (), {}, [], 2)
+    task3 = SolverTask(SuccessSolver, (), {}, [1, 2], 3)
+
+    tasks = {1: task1, 2: task2, 3: task3}
+
+    # After tasks 1 and 2 complete (mark them as completed)
+    task1.state = "completed"
+    task2.state = "completed"
+    completed = {1, 2}
+    ready = algo._get_ready_tasks(tasks, completed)
+
+    # Task 3 should now be ready
+    assert sorted(ready) == [3]
+
+
+def test_algorithm_get_ready_tasks_ignores_non_pending_tasks():
+    """Test that _get_ready_tasks ignores tasks that are not pending."""
+    algo = Algorithm()
+
+    # Create tasks with different states
+    task1 = SolverTask(SuccessSolver, (), {}, [], 1)
+    task2 = SolverTask(SuccessSolver, (), {}, [], 2)
+    task3 = SolverTask(SuccessSolver, (), {}, [], 3)
+
+    # Change states
+    task1.state = "running"
+    task2.state = "completed"
+    task3.state = "pending"
+
+    tasks = {1: task1, 2: task2, 3: task3}
+    completed = set()
+
+    ready = algo._get_ready_tasks(tasks, completed)
+
+    # Only task 3 should be ready (only pending task)
+    assert sorted(ready) == [3]
+
+
+def test_algorithm_get_ready_tasks_empty_when_all_completed():
+    """Test that _get_ready_tasks returns empty list when all tasks completed."""
+    algo = Algorithm()
+
+    # Create tasks
+    task1 = SolverTask(SuccessSolver, (), {}, [], 1)
+    task2 = SolverTask(SuccessSolver, (), {}, [], 2)
+
+    tasks = {1: task1, 2: task2}
+
+    # Mark all as completed
+    task1.state = "completed"
+    task2.state = "completed"
+
+    completed = {1, 2}
+    ready = algo._get_ready_tasks(tasks, completed)
+
+    # No ready tasks
+    assert sorted(ready) == []
+
+
+def test_algorithm_get_ready_tasks_partial_dependencies():
+    """Test that task with partial dependencies is not ready."""
+    algo = Algorithm()
+
+    # Create tasks: 1, 2, 3 no dependencies, 4 depends on 1, 2, 3
+    task1 = SolverTask(SuccessSolver, (), {}, [], 1)
+    task2 = SolverTask(SuccessSolver, (), {}, [], 2)
+    task3 = SolverTask(SuccessSolver, (), {}, [], 3)
+    task4 = SolverTask(SuccessSolver, (), {}, [1, 2, 3], 4)
+
+    tasks = {1: task1, 2: task2, 3: task3, 4: task4}
+
+    # After tasks 1 and 2 complete (but not 3) - mark them as completed
+    task1.state = "completed"
+    task2.state = "completed"
+    completed = {1, 2}
+    ready = algo._get_ready_tasks(tasks, completed)
+
+    # Task 3 should be ready (no deps), but not task 4 (missing dep 3)
+    assert sorted(ready) == [3]

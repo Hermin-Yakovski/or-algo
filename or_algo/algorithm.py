@@ -5,6 +5,7 @@ from register import Register, Parameter
 
 from .solver import Solver
 from .exception import OrAlgoException
+from .task import SolverTask
 
 
 class Algorithm:
@@ -75,6 +76,27 @@ class Algorithm:
                     return True
 
         return False
+
+    def _get_ready_tasks(
+        self,
+        tasks: dict[int, "SolverTask"],
+        completed: set[int]
+    ) -> list[int]:
+        """Find tasks whose dependencies are all satisfied.
+
+        Args:
+            tasks: Map of task_id to SolverTask
+            completed: Set of completed task IDs
+
+        Returns:
+            List of task IDs ready to execute
+        """
+        ready = []
+        for task_id, task in tasks.items():
+            if task.state == "pending":
+                if all(dep_id in completed for dep_id in task.dependencies):
+                    ready.append(task_id)
+        return ready
 
     def solve(self, data: Register[Parameter]) -> None:
         """Execute all solvers in sequence.
