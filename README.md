@@ -26,6 +26,50 @@ algo.append(MySolver)
 algo.solve(your_register)
 ```
 
+## Parallel Execution (Beta)
+
+The `Algorithm.parallel_solve()` method enables parallel execution of independent solvers using DAG-based dependency resolution.
+
+### Basic Usage
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+from or_algo import Algorithm, SharedRegister
+
+# Build dependency graph
+algo = Algorithm()
+id1 = algo.append(MySolver, "arg1")
+id2 = algo.append(MySolver, "arg2")  # Independent
+id3 = algo.append(MySolver, "arg3", after=[id1])  # Depends on id1
+
+# Create shared register
+shared_reg = SharedRegister()
+shared_reg["input"] = "value"
+
+# Execute in parallel
+with ProcessPoolExecutor(max_workers=4) as executor:
+    algo.parallel_solve(shared_reg, executor)
+
+# Access results
+result = shared_reg["output"]
+```
+
+### Dependencies
+
+Specify solver dependencies using the `after` parameter:
+
+```python
+id_a = algo.append(SolverA)
+id_b = algo.append(SolverB, after=[id_a])  # B waits for A
+id_c = algo.append(SolverC, after=[id_a, id_b])  # C waits for A and B
+```
+
+### Notes
+
+- **Beta API**: The parallel execution feature is in beta and may change.
+- **Cycle Detection**: Raises `OrAlgoException` if dependency graph contains cycles.
+- **Error Handling**: If any solver fails, pending tasks are cancelled and the exception is propagated.
+
 ## LP Module (OR-Tools)
 
 The `or_algo.lp` module provides Linear Programming support using Google OR-Tools.
