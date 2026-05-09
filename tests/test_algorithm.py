@@ -190,3 +190,55 @@ def test_algorithm_dependency_graph_with_dependencies():
     assert algo._dependency_graph[1] == []
     assert algo._dependency_graph[2] == [1]
     assert algo._dependency_graph[3] == [1, 2]
+
+
+def test_algorithm_detect_cycle_no_cycle():
+    """Test that _detect_cycle() returns False for a DAG."""
+    algo = Algorithm()
+    id1 = algo.append(SuccessSolver)
+    id2 = algo.append(SuccessSolver, after=[id1])
+    id3 = algo.append(SuccessSolver, after=[id1])
+
+    assert algo._detect_cycle() is False
+
+
+def test_algorithm_detect_cycle_self_loop():
+    """Test that _detect_cycle() returns True for a self-loop."""
+    algo = Algorithm()
+    id1 = algo.append(SuccessSolver)
+    # Create a self-loop: task 1 depends on itself
+    algo._dependency_graph[1] = [1]
+
+    assert algo._detect_cycle() is True
+
+
+def test_algorithm_detect_cycle_complex_cycle():
+    """Test that _detect_cycle() returns True for a complex cycle."""
+    algo = Algorithm()
+    id1 = algo.append(SuccessSolver)
+    id2 = algo.append(SuccessSolver)
+    id3 = algo.append(SuccessSolver)
+
+    # Create a cycle: 1 -> 2 -> 3 -> 1
+    algo._dependency_graph[1] = [3]
+    algo._dependency_graph[2] = [1]
+    algo._dependency_graph[3] = [2]
+
+    assert algo._detect_cycle() is True
+
+
+def test_algorithm_detect_cycle_partial_cycle():
+    """Test that _detect_cycle() returns True when cycle exists in part of graph."""
+    algo = Algorithm()
+    id1 = algo.append(SuccessSolver)
+    id2 = algo.append(SuccessSolver)
+    id3 = algo.append(SuccessSolver)
+    id4 = algo.append(SuccessSolver)
+
+    # Create a cycle between 2 and 3, but 1 and 4 are independent
+    algo._dependency_graph[1] = []
+    algo._dependency_graph[2] = [3]
+    algo._dependency_graph[3] = [2]
+    algo._dependency_graph[4] = []
+
+    assert algo._detect_cycle() is True
