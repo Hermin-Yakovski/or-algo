@@ -142,7 +142,7 @@ for future in as_completed(futures.keys()):
     self._merge_register(reg, result_reg)
     completed.add(task_id)
 
-# Submit next tasks with updated reg
+# Submit next tasks with updated data
 for ready_id in self._get_ready_tasks(tasks, completed):
     reg_copy = pickle.loads(pickle.dumps(reg))
     new_future = executor.submit(tasks[ready_id].execute, reg_copy)

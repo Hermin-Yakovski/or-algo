@@ -73,7 +73,7 @@ def test_parallel_solve_empty_algorithm():
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         algo.parallel_solve(reg, executor)
-    # reg is modified in place
+    # data is modified in place
 
 
 def test_parallel_solve_returns_same_register():
@@ -85,7 +85,7 @@ def test_parallel_solve_returns_same_register():
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         algo.parallel_solve(reg, executor)
-    # reg is modified in place
+    # data is modified in place
     assert reg[Id][(Index,)][(0,)] == "test"
 
 

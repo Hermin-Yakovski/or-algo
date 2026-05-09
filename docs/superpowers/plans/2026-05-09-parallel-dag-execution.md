@@ -306,7 +306,7 @@ return data
 
 Change to:
 ```python
-return  # None, reg is modified in place
+return  # None, data is modified in place
 ```
 
 Or just remove the return statement.

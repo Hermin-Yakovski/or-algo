@@ -47,7 +47,7 @@ id3 = algo.append(MySolver, "arg3", after=[id1])  # Depends on id1
 reg = Register[Parameter]()
 reg["input"] = "value"
 
-# Execute in parallel (modifies reg in place)
+# Execute in parallel (modifies data in place)
 with ProcessPoolExecutor(max_workers=4) as executor:
     algo.parallel_solve(reg, executor)
 
