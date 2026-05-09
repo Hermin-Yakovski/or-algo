@@ -96,7 +96,7 @@ class Algorithm:
         """
         ready = []
         for task_id, task in tasks.items():
-            if task.state == "pending":
+            if task_id not in completed and task.state == "pending":
                 if all(dep_id in completed for dep_id in task.dependencies):
                     ready.append(task_id)
         return ready
