@@ -163,3 +163,30 @@ def test_algorithm_exception_message():
 
     assert "FailingSolver" in str(exc_info.value)
     assert "solve()" in str(exc_info.value)
+
+
+def test_algorithm_dependency_graph_no_dependencies():
+    """Test that dependency graph tracks solvers with no dependencies."""
+    algo = Algorithm()
+    solver_id = algo.append(SuccessSolver)
+
+    assert solver_id == 1
+    assert algo._dependency_graph[1] == []
+
+
+def test_algorithm_dependency_graph_with_dependencies():
+    """Test that dependency graph tracks solvers with dependencies."""
+    algo = Algorithm()
+    solver_id_1 = algo.append(SuccessSolver)
+    solver_id_2 = algo.append(SuccessSolver, after=[solver_id_1])
+    solver_id_3 = algo.append(SuccessSolver, after=[solver_id_1, solver_id_2])
+
+    # Verify solver IDs
+    assert solver_id_1 == 1
+    assert solver_id_2 == 2
+    assert solver_id_3 == 3
+
+    # Verify dependency graph
+    assert algo._dependency_graph[1] == []
+    assert algo._dependency_graph[2] == [1]
+    assert algo._dependency_graph[3] == [1, 2]
