@@ -739,17 +739,18 @@ name = "register"
 version = "0.1.0"
 description = "Multi-dimensional data registry with validation and pandas export"
 optional = false
-python-versions = "^3.11"
+python-versions = ">=3.11,<4.0"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "register-0.1.0-py3-none-any.whl", hash = "sha256:a342fcdd583239c96afd539d60ce4dce65a045ae3ecd54bf582fadbdb7cfa66c"},
+]
 
 [package.dependencies]
-pandas = "^2.0"
+pandas = ">=2.0,<3.0"
 
 [package.source]
-type = "directory"
-url = "../register"
+type = "file"
+url = "../register/dist/register-0.1.0-py3-none-any.whl"
 
 [[package]]
 name = "ruff"
@@ -818,4 +819,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "7fdc2451d7339bd72634f97ab81f1368b4f9897f558147901004aa0416fe1afb"
+content-hash = "8d6c0865f663a63923153f06c4b38dc2719acb7eabb5d9e2d087a312a7c296f9"
