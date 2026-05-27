@@ -61,7 +61,7 @@ class CreateVar(LpStep, ABC):
         vtype_mapping = {
             int: 'INTEGER',
             float: 'CONTINUOUS',
-            bool: 'INTEGER',  # OR-Tools uses [0,1] integer for binary
+            bool: 'BINARY',  # OR-Tools uses [0,1] integer for binary
         }
         vtype = self._symbol.parameter.vtype
         if vtype not in vtype_mapping:
@@ -188,11 +188,12 @@ class CreateVar(LpStep, ABC):
 
             # Create variable using type-specific OR-Tools methods
             if vtype == 'INTEGER':
-                # Use BoolVar for binary variables (lb=0, ub=1)
-                if lb_ == 0 and ub_ == 1:
-                    variable = model.BoolVar(name)
-                else:
-                    variable = model.IntVar(lb_, ub_, name)
+                variable = model.IntVar(lb_, ub_, name)
+            elif vtype == 'BINARY':
+                # in ortools, integral variables are recognized as binary when bounded within [0, 1]
+                lb_ = 0 if lb_ < 0 else lb_
+                ub_ = 1 if ub_ > 1 else ub_
+                variable = model.IntVar(lb_, ub_, name)
             else:  # CONTINUOUS
                 variable = model.NumVar(lb_, ub_, name)
             var[self._symbol][dimension_final][index_final] = variable
