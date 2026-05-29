@@ -116,6 +116,12 @@ class LpSolver(Solver):
                     f"Failed {step_type.__name__}.run()! args={args}, kwargs={kwargs}"
                 ) from e
 
+        self._model.EnableOutput()
+
+        # write model to .lp file
+        with open(f"{self._name}.lp", 'w') as f:
+            f.write(self._model.ExportModelAsLpFormat(False))
+
         # Solve the model
         status = self._model.Solve()
 
