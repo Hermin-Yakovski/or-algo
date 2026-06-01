@@ -37,7 +37,7 @@ class LpSolver(Solver):
         weight: "Register[Symbol]" = None,
         lb: "Register[Symbol]" = None,
         ub: "Register[Symbol]" = None,
-        solver_type: str = 'CBC'
+        solver_type: str = 'SCIP'
     ):
         from register import Register
 
