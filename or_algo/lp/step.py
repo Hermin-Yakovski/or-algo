@@ -208,16 +208,11 @@ class CreateVar(LpStep, ABC):
             else:
                 weight_ = weight
 
+            sign: int = -1 if sense == 'minimize' else 1
+
             if abs(weight_) > min_weight:
                 # Use OR-Tools objective accumulation pattern
-                objective = model.Objective()
-                objective.SetCoefficient(variable, weight_)
-
-                # Set objective direction (OR-Tools requires explicit direction setting)
-                if sense == 'minimize':
-                    objective.SetMinimization()
-                else:
-                    objective.SetMaximization()
+                model.Objective().SetCoefficient(variable, sign * weight_)
 
         return count
 

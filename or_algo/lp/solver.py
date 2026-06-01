@@ -55,6 +55,7 @@ class LpSolver(Solver):
             raise exception.LpSolverException(
                 f"Failed to create OR-Tools solver with type '{solver_type}'"
             )
+        self._model.Objective().SetMaximization()
 
     @property
     def solver_type(self) -> str:
