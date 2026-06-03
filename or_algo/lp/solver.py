@@ -1,11 +1,15 @@
 """LpSolver: Linear Programming solver using OR-Tools."""
 
-from typing import TYPE_CHECKING, Any, Type, List
+from typing import TYPE_CHECKING
+
+from or_algo.lp import Publish
 
 if TYPE_CHECKING:
+    from typing import Any, Dict, List, Type
+
     from register import Register, Parameter
     from or_algo.lp.symbol import Symbol
-    from or_algo.lp.step import LpStep, Publish
+    from or_algo.lp.step import LpStep
     from ortools.linear_solver import pywraplp
 
 from ortools.linear_solver import pywraplp
@@ -27,8 +31,8 @@ class LpSolver(Solver):
     _lb: "Register[Symbol]"
     _ub: "Register[Symbol]"
     _var: "Register[Symbol]"
-    _build_steps: list[tuple[Type["LpStep"], tuple[Any, ...], dict[str, Any]]]
-    _publish_steps: "List[Publish]"
+    _build_steps: "List[Tuple[Type[LpStep], Tuple[Any, ...], Dict[str, Any]]]"
+    _publish_steps: "List[Tuple[Tuple[Any], Dict[str, Any]]]"
     _model: pywraplp.Solver
     _solver_type: str
 
@@ -63,7 +67,10 @@ class LpSolver(Solver):
     def solver_type(self) -> str:
         return self._solver_type
 
-    def append(self, step: Type["LpStep"], *args: Any, **kwargs: Any) -> None:
+    def publish(self, *args, **kwargs) -> None:
+        self._publish_steps.append((args, kwargs))
+
+    def append(self, step: "Type[LpStep]", *args: "Any", **kwargs: "Any") -> None:
         """Add a build step to the execution sequence.
 
         Args:
@@ -130,7 +137,8 @@ class LpSolver(Solver):
 
         # Handle OR-Tools status codes
         if status == pywraplp.Solver.OPTIMAL:
-            pass  # Users handle solution extraction
+            for args, kwargs in self._publish_steps:
+                Publish(*args, **kwargs).run(data, self._model, self._var)
         elif status == pywraplp.Solver.INFEASIBLE:
             raise exception.LpModelOptimizeException("Model is infeasible")
         elif status == pywraplp.Solver.UNBOUNDED:
