@@ -370,7 +370,7 @@ class Publish(LpStep):
             elif parameter.vtype is float:
                 pass
             else:
-                raise AlgoServiceException(f"Unsupported vtype {parameter.vtype} while publishing variable {self._symbol.name}")
+                raise exception.BuildLpStepException(f"Unsupported vtype {parameter.vtype} while publishing variable {self._symbol.name}")
 
             if self._zeros or (quantity > self._threshold):
                 key = self._symbol.parameter
