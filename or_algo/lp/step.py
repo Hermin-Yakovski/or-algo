@@ -1,15 +1,18 @@
 """LpStep hierarchy for LP model building."""
 from abc import ABC, abstractmethod
 import itertools
-from typing import TYPE_CHECKING, Optional, Callable
+from typing import TYPE_CHECKING
 
 from register import Register, Metric
 
 from . import exception
 
 if TYPE_CHECKING:
+    from typing import Callable, Optional, Tuple
+
     from ortools.linear_solver import pywraplp
     from register import Dimension, Parameter
+
     from .symbol import Symbol, Var, Constr
 
 class LpStep(ABC):
@@ -83,17 +86,17 @@ class CreateVar(LpStep, ABC):
 
     def _create(self, data: "Register[Parameter]", model: "pywraplp.Solver", var: "Register[Symbol]",
         primary_key: "Parameter",
-        dimension: tuple["Dimension", ...],
-        weight: Optional[float] = None,
-        lb: Optional[float] = None,
-        ub: Optional[float] = None,
+        dimension: "Tuple[Dimension, ...]",
+        weight: "Optional[float]" = None,
+        lb: "Optional[float]" = None,
+        ub: "Optional[float]" = None,
         *,
         min_weight: float = 1e-6,
-        metric: Optional["Method"] = None,
-        which: Optional[tuple[bool, ...]] = None,
+        metric: "Optional[Method]" = None,
+        which: "Optional[Tuple[bool, ...]]" = None,
         sense : str = 'minimize',
         clear: bool = False,
-        skip: Optional[Callable[[tuple[int, ...]], bool]] = None,
+        skip: "Optional[Callable[[tuple[int, ...]], bool]]" = None,
         ) -> int:
         """
         Add variables in batch
@@ -342,3 +345,34 @@ class CreateConstrCalculateMetric(CreateConstr):
                             f"Unknown metric type: {metric}. Expected SUM, MAX, MIN, or RANGE."
                         )
 
+
+class Publish(LpStep):
+    _zeros: bool
+    _dimension: "Tuple[Dimension, ...]"
+    _threshold: float
+    _target: "Tuple[int, ...]"
+
+    def __init__(self, symbol: "Symbol", dimension: "Tuple[Dimension, ...]", target: "Tuple[int, ...]" = None, zeros: bool = False, threshold: float = 1e-6):
+        super().__init__(symbol)
+        self._dimension = dimension
+        self._zeros = zeros
+        self._threshold = threshold
+        self._target = target
+
+    def run(self, data: "Register[Parameter]", model: "pywraplp.Solver", register: "Register[Symbol]") -> None:
+        for index in register.select(self._symbol, self._dimension, self._target):
+            parameter = self._symbol.parameter
+            quantity = register[self._symbol][self._dimension][index].solution_value()
+            if parameter.vtype is int:
+                quantity = int(round(quantity, 0))
+            elif parameter.vtype is bool:
+                quantity = bool(round(quantity, 0))
+            elif parameter.vtype is float:
+                pass
+            else:
+                raise AlgoServiceException(f"Unsupported vtype {parameter.vtype} while publishing variable {self._symbol.name}")
+
+            if self._zeros or (quantity > self._threshold):
+                key = self._symbol.parameter
+                data[key][self._dimension][index] = quantity
+                # logger.debug("[v] %s%s%s: %s" , key, self._dimension, index, quantity)

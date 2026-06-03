@@ -1,11 +1,11 @@
 """LpSolver: Linear Programming solver using OR-Tools."""
 
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Type, List
 
 if TYPE_CHECKING:
     from register import Register, Parameter
     from or_algo.lp.symbol import Symbol
-    from or_algo.lp.step import LpStep
+    from or_algo.lp.step import LpStep, Publish
     from ortools.linear_solver import pywraplp
 
 from ortools.linear_solver import pywraplp
@@ -28,6 +28,7 @@ class LpSolver(Solver):
     _ub: "Register[Symbol]"
     _var: "Register[Symbol]"
     _build_steps: list[tuple[Type["LpStep"], tuple[Any, ...], dict[str, Any]]]
+    _publish_steps: "List[Publish]"
     _model: pywraplp.Solver
     _solver_type: str
 
@@ -48,6 +49,7 @@ class LpSolver(Solver):
         self._ub = Register() if ub is None else ub
         self._var = Register()
         self._build_steps = list()
+        self._publish_steps = list()
         self._solver_type = solver_type
 
         self._model = pywraplp.Solver.CreateSolver(solver_type)
