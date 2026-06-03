@@ -17,7 +17,7 @@ def test_lp_solver_initialization():
     """LpSolver should initialize with required parameters."""
     solver = LpSolver(name="test_solver")
     assert solver._name == "test_solver"
-    assert solver.solver_type == 'CBC'
+    assert solver.solver_type == 'SCIP'
     assert solver._model is not None
 
 

@@ -121,7 +121,7 @@ def test_create_var_vtype_mapping():
     )
     assert step_int.vtype == 'INTEGER'
 
-    # Test bool -> INTEGER
+    # Test bool -> BINARY
     mock_param.vtype = bool
     var_bool = Var(p=mock_param, sign="z")
 
@@ -131,7 +131,7 @@ def test_create_var_vtype_mapping():
         lb=Register(),
         ub=Register()
     )
-    assert step_bool.vtype == 'INTEGER'
+    assert step_bool.vtype == 'BINARY'
 
 
 def test_create_constr_is_lp_step():
@@ -317,7 +317,7 @@ def test_create_constr_calculate_metric_max():
     var_register[var_symbol][(test_dim,)][(0,)] = base1
     var_register[var_symbol][(test_dim,)][(1,)] = base2
     var_register[var_symbol][(test_dim,)][(2,)] = base3
-    var_register[var_symbol][(test_dim, Metric)][(0, Register.MAX)] = metric_var
+    var_register[var_symbol][(test_dim, Metric)][(Register.ALL, Register.MAX)] = metric_var
 
     # Create data register
     data = Register()
@@ -429,7 +429,7 @@ def test_create_constr_calculate_metric_range():
     var_register[var_symbol][(test_dim,)][(0,)] = base1
     var_register[var_symbol][(test_dim,)][(1,)] = base2
     var_register[var_symbol][(test_dim,)][(2,)] = base3
-    var_register[var_symbol][(test_dim, Metric)][(0, Register.RANGE)] = metric_var
+    var_register[var_symbol][(test_dim, Metric)][(Register.ALL, Register.RANGE)] = metric_var
 
     # Create data register
     data = Register()
@@ -489,3 +489,517 @@ def test_create_constr_calculate_metric_unknown_metric():
     # Should raise BuildLpStepException for unknown metric type
     with pytest.raises(BuildLpStepException, match="Unknown metric type"):
         step.run(data, model, var_register)
+
+
+def test_create_var_vtype_unsupported_type():
+    """CreateVar.vtype should raise ValueError for unsupported vtype."""
+    from or_algo.lp.step import CreateVar
+    # Test unsupported vtype (str instead of int/float/bool)
+    mock_param = Mock()
+    mock_param.vtype = str  # Unsupported type
+    var_unsupported = Var(p=mock_param, sign="x")
+
+    class ConcreteCreateVar(CreateVar):
+        def run(self, data, model, var):
+            pass
+
+    step = ConcreteCreateVar(
+        symbol=var_unsupported,
+        weight=Register(),
+        lb=Register(),
+        ub=Register()
+    )
+    with pytest.raises(ValueError, match="Unsupported Parameter vtype"):
+        _ = step.vtype
+
+
+def test_create_var_create_method_basic():
+    """Test CreateVar._create method with basic variable creation."""
+    from or_algo.lp.step import CreateVar
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    # Create a mock parameter
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = float
+
+    var_symbol = Var(p=mock_param, sign='x')
+
+    # Create solver
+    model = pywraplp.Solver.CreateSolver('CBC')
+
+    # Create dimension
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    # Create registers
+    var_register = Register()
+    weight_register = Register()
+    lb_register = Register()
+    ub_register = Register()
+
+    # Create a concrete CreateVar subclass
+    class ConcreteCreateVar(CreateVar):
+        def run(self, data, model, var):
+            pass
+
+    step = ConcreteCreateVar(
+        symbol=var_symbol,
+        weight=weight_register,
+        lb=lb_register,
+        ub=ub_register
+    )
+
+    # Create data register with primary key
+    data = Register()
+    data[Parameter][(test_dim,)][(0,)] = (0,)
+    data[Parameter][(test_dim,)][(1,)] = (1,)
+    data[Parameter][(test_dim,)][(2,)] = (2,)
+
+    # Set bounds
+    lb_register[var_symbol][(test_dim,)][(0,)] = 0.0
+    lb_register[var_symbol][(test_dim,)][(1,)] = 0.0
+    lb_register[var_symbol][(test_dim,)][(2,)] = 0.0
+    ub_register[var_symbol][(test_dim,)][(0,)] = 10.0
+    ub_register[var_symbol][(test_dim,)][(1,)] = 20.0
+    ub_register[var_symbol][(test_dim,)][(2,)] = 15.0
+
+    # Set weights
+    weight_register[var_symbol][(test_dim,)][(0,)] = 1.0
+    weight_register[var_symbol][(test_dim,)][(1,)] = 2.0
+    weight_register[var_symbol][(test_dim,)][(2,)] = 3.0
+
+    # Call _create method
+    count = step._create(
+        data=data,
+        model=model,
+        var=var_register,
+        primary_key=Parameter,
+        dimension=(test_dim,),
+        sense='minimize'
+    )
+
+    # Should create 3 variables
+    assert count == 3
+
+    # Verify variables were created
+    assert var_symbol in var_register
+    assert (test_dim,) in var_register[var_symbol]
+    assert (0,) in var_register[var_symbol][(test_dim,)]
+    assert (1,) in var_register[var_symbol][(test_dim,)]
+    assert (2,) in var_register[var_symbol][(test_dim,)]
+
+    # Verify objective coefficients were set
+    obj = model.Objective()
+    assert obj.GetCoefficient(var_register[var_symbol][(test_dim,)][(0,)]) == -1.0  # minimize, so negative
+    assert obj.GetCoefficient(var_register[var_symbol][(test_dim,)][(1,)]) == -2.0
+    assert obj.GetCoefficient(var_register[var_symbol][(test_dim,)][(2,)]) == -3.0
+
+
+def test_create_var_create_with_metric_sum():
+    """Test CreateVar._create method with SUM metric aggregating all dimensions."""
+    from or_algo.lp.step import CreateVar
+    from register import Parameter, Dimension, Metric
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = float
+
+    var_symbol = Var(p=mock_param, sign='x')
+    model = pywraplp.Solver.CreateSolver('CBC')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    var_register = Register()
+    weight_register = Register()
+    lb_register = Register()
+    ub_register = Register()
+
+    class ConcreteCreateVar(CreateVar):
+        def run(self, data, model, var):
+            pass
+
+    step = ConcreteCreateVar(
+        symbol=var_symbol,
+        weight=weight_register,
+        lb=lb_register,
+        ub=ub_register
+    )
+
+    data = Register()
+    data[Parameter][(test_dim,)][(0,)] = (0,)
+    data[Parameter][(test_dim,)][(1,)] = (1,)
+    data[Parameter][(test_dim,)][(2,)] = (2,)
+
+    # Create with SUM metric (aggregates all dimensions)
+    # When all dimensions are aggregated, only metric variable is created
+    count = step._create(
+        data=data,
+        model=model,
+        var=var_register,
+        primary_key=Parameter,
+        dimension=(test_dim,),
+        metric=Register.SUM,
+        sense='minimize'
+    )
+
+    # Should create only 1 metric variable (all dimensions aggregated)
+    assert count == 1
+
+    # Verify metric variable was created at (test_dim, Metric) with (Register.ALL, SUM)
+    assert (test_dim, Metric) in var_register[var_symbol]
+    assert (Register.ALL, Register.SUM) in var_register[var_symbol][(test_dim, Metric)]
+
+
+def test_create_var_create_with_skip():
+    """Test CreateVar._create method with skip callback."""
+    from or_algo.lp.step import CreateVar
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = float
+
+    var_symbol = Var(p=mock_param, sign='x')
+    model = pywraplp.Solver.CreateSolver('CBC')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    var_register = Register()
+    weight_register = Register()
+    lb_register = Register()
+    ub_register = Register()
+
+    class ConcreteCreateVar(CreateVar):
+        def run(self, data, model, var):
+            pass
+
+    step = ConcreteCreateVar(
+        symbol=var_symbol,
+        weight=weight_register,
+        lb=lb_register,
+        ub=ub_register
+    )
+
+    data = Register()
+    data[Parameter][(test_dim,)][(0,)] = (0,)
+    data[Parameter][(test_dim,)][(1,)] = (1,)
+    data[Parameter][(test_dim,)][(2,)] = (2,)
+
+    # Skip index (1,)
+    skip_func = lambda index: index == (1,)
+
+    count = step._create(
+        data=data,
+        model=model,
+        var=var_register,
+        primary_key=Parameter,
+        dimension=(test_dim,),
+        skip=skip_func
+    )
+
+    # Should create only 2 variables (skipped index 1)
+    assert count == 2
+
+    # Verify index (1,) was skipped
+    assert (1,) not in var_register[var_symbol][(test_dim,)]
+
+
+def test_create_var_create_invalid_which_length():
+    """Test CreateVar._create raises BuildLpStepException for invalid which length."""
+    from or_algo.lp.step import CreateVar
+    from or_algo.lp.exception import BuildLpStepException
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = float
+
+    var_symbol = Var(p=mock_param, sign='x')
+    model = pywraplp.Solver.CreateSolver('CBC')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    var_register = Register()
+    weight_register = Register()
+    lb_register = Register()
+    ub_register = Register()
+
+    class ConcreteCreateVar(CreateVar):
+        def run(self, data, model, var):
+            pass
+
+    step = ConcreteCreateVar(
+        symbol=var_symbol,
+        weight=weight_register,
+        lb=lb_register,
+        ub=ub_register
+    )
+
+    data = Register()
+    data[Parameter][(test_dim,)][(0,)] = (0,)
+
+    # which has length 1 but dimension has length 2 - should raise
+    with pytest.raises(BuildLpStepException, match="length of which and dimension must be equal"):
+        step._create(
+            data=data,
+            model=model,
+            var=var_register,
+            primary_key=Parameter,
+            dimension=(test_dim, test_dim),  # 2 dimensions
+            metric=Register.SUM,
+            which=(False,)  # only 1 which flag
+        )
+
+
+def test_publish_basic():
+    """Test Publish.run method with continuous variables."""
+    from or_algo.lp.step import Publish
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = float
+
+    var_symbol = Var(p=mock_param, sign='x')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    # Create solver and variable
+    model = pywraplp.Solver.CreateSolver('CBC')
+    var = model.NumVar(0, 100, 'x_0')
+
+    # Solve the model to set the variable value
+    # Add constraint to fix the variable value
+    model.Add(var == 42.5)
+    model.Minimize(var)
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+
+    # Create register with variable
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = var
+
+    # Create data register
+    data = Register()
+
+    # Create Publish step
+    step = Publish(symbol=var_symbol, dimension=(test_dim,))
+
+    # Run publish
+    step.run(data, model, var_register)
+
+    # Verify data was published (mock_param is used as key)
+    assert data[mock_param][(test_dim,)][(0,)] == 42.5
+
+
+def test_publish_with_integer_vtype():
+    """Test Publish.run method rounds integer variables."""
+    from or_algo.lp.step import Publish
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = int
+
+    var_symbol = Var(p=mock_param, sign='x')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    model = pywraplp.Solver.CreateSolver('CBC')
+    var = model.IntVar(0, 100, 'x_0')
+
+    # Fix to a specific value - use objective to drive it to 42
+    model.Add(var >= 42)
+    model.Add(var <= 42)
+    model.Minimize(var)
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = var
+
+    data = Register()
+    step = Publish(symbol=var_symbol, dimension=(test_dim,))
+
+    step.run(data, model, var_register)
+
+    # Verify integer value (mock_param is used as key)
+    assert data[mock_param][(test_dim,)][(0,)] == 42
+
+
+def test_publish_with_boolean_vtype():
+    """Test Publish.run method converts to boolean."""
+    from or_algo.lp.step import Publish
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = bool
+
+    var_symbol = Var(p=mock_param, sign='x')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    model = pywraplp.Solver.CreateSolver('CBC')
+    var = model.IntVar(0, 1, 'x_0')
+
+    # Fix to value that rounds to 1 (True)
+    model.Add(var >= 0.5)
+    model.Minimize(var)
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = var
+
+    data = Register()
+    step = Publish(symbol=var_symbol, dimension=(test_dim,))
+
+    step.run(data, model, var_register)
+
+    # Verify conversion to boolean (mock_param is used as key)
+    assert data[mock_param][(test_dim,)][(0,)] is True  # round(0.5+) = 1 = bool(1) = True
+
+
+def test_publish_with_zeros_flag():
+    """Test Publish.run method with zeros=True publishes zero values."""
+    from or_algo.lp.step import Publish
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = float
+
+    var_symbol = Var(p=mock_param, sign='x')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    model = pywraplp.Solver.CreateSolver('CBC')
+    var = model.NumVar(0, 100, 'x_0')
+
+    # Fix to zero
+    model.Add(var == 0.0)
+    model.Minimize(var)
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = var
+
+    data = Register()
+    step = Publish(symbol=var_symbol, dimension=(test_dim,), zeros=True)  # Enable zeros
+
+    step.run(data, model, var_register)
+
+    # With zeros=True, zero values should be published (mock_param is used as key)
+    assert data[mock_param][(test_dim,)][(0,)] == 0.0
+
+
+def test_publish_without_zeros_skips_small_values():
+    """Test Publish.run method without zeros skips values below threshold."""
+    from or_algo.lp.step import Publish
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = float
+
+    var_symbol = Var(p=mock_param, sign='x')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    model = pywraplp.Solver.CreateSolver('CBC')
+    var = model.NumVar(0, 100, 'x_0')
+
+    # Fix to a very small value, below default threshold of 1e-6
+    model.Add(var == 1e-7)
+    model.Minimize(var)
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = var
+
+    data = Register()
+    step = Publish(symbol=var_symbol, dimension=(test_dim,), zeros=False)  # Default zeros=False
+
+    step.run(data, model, var_register)
+
+    # With zeros=False, values below threshold should not be published (mock_param is used as key)
+    assert (0,) not in data[mock_param][(test_dim,)]
+
+
+def test_publish_unsupported_vtype():
+    """Test Publish.run raises BuildLpStepException for unsupported vtype."""
+    from or_algo.lp.step import Publish
+    from or_algo.lp.exception import BuildLpStepException
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = str  # Unsupported type
+
+    var_symbol = Var(p=mock_param, sign='x')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    model = pywraplp.Solver.CreateSolver('CBC')
+    var = model.NumVar(0, 100, 'x_0')
+
+    # Fix to any value
+    model.Add(var == 42.0)
+    model.Minimize(var)
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = var
+
+    data = Register()
+    step = Publish(symbol=var_symbol, dimension=(test_dim,))
+
+    # Should raise BuildLpStepException for unsupported vtype
+    with pytest.raises(BuildLpStepException, match="Unsupported vtype"):
+        step.run(data, model, var_register)
+
+
+def test_publish_with_target():
+    """Test Publish.run method with target filter."""
+    from or_algo.lp.step import Publish
+    from register import Parameter, Dimension
+    from ortools.linear_solver import pywraplp
+
+    mock_param = Mock()
+    mock_param.name = "x"
+    mock_param.vtype = float
+
+    var_symbol = Var(p=mock_param, sign='x')
+    test_dim = Dimension('TestDim', 'TestDimCN', 'TD')
+
+    model = pywraplp.Solver.CreateSolver('CBC')
+    var0 = model.NumVar(0, 100, 'x_0')
+    var1 = model.NumVar(0, 100, 'x_1')
+
+    # Fix variables to specific values
+    model.Add(var0 == 10.0)
+    model.Add(var1 == 20.0)
+    model.Minimize(var0 + var1)
+    status = model.Solve()
+    assert status == pywraplp.Solver.OPTIMAL
+
+    var_register = Register()
+    var_register[var_symbol][(test_dim,)][(0,)] = var0
+    var_register[var_symbol][(test_dim,)][(1,)] = var1
+
+    data = Register()
+    # Only publish index (1,)
+    step = Publish(symbol=var_symbol, dimension=(test_dim,), target=(1,))
+
+    step.run(data, model, var_register)
+
+    # Only index (1,) should be published (mock_param is used as key)
+    assert (1,) in data[mock_param][(test_dim,)]
+    assert data[mock_param][(test_dim,)][(1,)] == 20.0
+    # Index (0,) should not be published
+    assert (0,) not in data[mock_param][(test_dim,)]
