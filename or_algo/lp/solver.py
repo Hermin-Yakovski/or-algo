@@ -1,22 +1,22 @@
 """LpSolver: Linear Programming solver using OR-Tools."""
+from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from or_algo.lp import Publish
-
-if TYPE_CHECKING:
-    from typing import Any, Dict, List, Type
-
-    from register import Register, Parameter
-    from or_algo.lp.symbol import Symbol
-    from or_algo.lp.step import LpStep
-    from ortools.linear_solver import pywraplp
-
 from ortools.linear_solver import pywraplp
 
 from ..solver import Solver
 from . import exception
 from .step import CreateConstrCalculateMetric
+
+if TYPE_CHECKING:
+    from typing import Any, Dict, List, Optional, Tuple, Type
+
+    from register import Register, Parameter
+    from or_algo.lp.symbol import Var
+    from or_algo.lp.step import LpStep
+    from ortools.linear_solver import pywraplp
 
 
 class LpSolver(Solver):
@@ -27,21 +27,21 @@ class LpSolver(Solver):
     """
 
     _name: str
-    _weight: "Register[Symbol]"
-    _lb: "Register[Symbol]"
-    _ub: "Register[Symbol]"
-    _var: "Register[Symbol]"
-    _build_steps: "List[Tuple[Type[LpStep], Tuple[Any, ...], Dict[str, Any]]]"
-    _publish_steps: "List[Tuple[Tuple[Any], Dict[str, Any]]]"
+    _weight: Register[Var]
+    _lb: Register[Var]
+    _ub: Register[Var]
+    _var: Register[Var]
+    _build_steps: List[Tuple[Type[LpStep], Tuple[Any, ...], Dict[str, Any]]]
+    _publish_steps: List[Tuple[Tuple[Any, ...], Dict[str, Any]]]
     _model: pywraplp.Solver
     _solver_type: str
 
     def __init__(
         self,
         name: str,
-        weight: "Register[Symbol]" = None,
-        lb: "Register[Symbol]" = None,
-        ub: "Register[Symbol]" = None,
+        weight: Optional[Register[Var]] = None,
+        lb: Optional[Register[Var]] = None,
+        ub: Optional[Register[Var]] = None,
         solver_type: str = 'SCIP'
     ):
         from register import Register
@@ -67,10 +67,10 @@ class LpSolver(Solver):
     def solver_type(self) -> str:
         return self._solver_type
 
-    def publish(self, *args, **kwargs) -> None:
+    def publish(self, *args: Any, **kwargs: Any) -> None:
         self._publish_steps.append((args, kwargs))
 
-    def append(self, step: "Type[LpStep]", *args: "Any", **kwargs: "Any") -> None:
+    def append(self, step: Type[LpStep], *args: Any, **kwargs: Any) -> None:
         """Add a build step to the execution sequence.
 
         Args:
@@ -102,7 +102,7 @@ class LpSolver(Solver):
                 f"Unsupported step type {step} in {type(self).__name__}.append()"
             )
 
-    def solve(self, data: "Register[Parameter]") -> "Register[Parameter]":
+    def solve(self, data: Register[Parameter]) -> Register[Parameter]:
         """Build and solve the LP model.
 
         Args:
@@ -139,6 +139,7 @@ class LpSolver(Solver):
         if status == pywraplp.Solver.OPTIMAL:
             for args, kwargs in self._publish_steps:
                 Publish(*args, **kwargs).run(data, self._model, self._var)
+            return data
         elif status == pywraplp.Solver.INFEASIBLE:
             raise exception.LpModelOptimizeException("Model is infeasible")
         elif status == pywraplp.Solver.UNBOUNDED:
@@ -151,5 +152,3 @@ class LpSolver(Solver):
             raise exception.LpModelOptimizeException(
                 f"No solution found! status={status}"
             )
-
-        return data

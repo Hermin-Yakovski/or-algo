@@ -1,9 +1,12 @@
 """Symbol hierarchy for LP model elements."""
+from __future__ import annotations
 
-from typing import Type, Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
+
+from ortools.linear_solver import pywraplp
 
 if TYPE_CHECKING:
-    from register import Parameter  # noqa: F401
+    from register import Parameter
 
 
 class Symbol:
@@ -12,13 +15,13 @@ class Symbol:
     _name: str
     _name_cn: str
     _sign: str
-    vtype: Type[Any]
+    vtype: Any
 
     def __init__(self, name: str, name_cn: str, sign: str):
         self._name = name
         self._name_cn = name_cn
         self._sign = sign
-        self.vtype = type(None)  # Placeholder, set by subclasses
+        self.vtype = None
 
     @property
     def name(self) -> str:
@@ -42,16 +45,16 @@ class Symbol:
 class Var(Symbol):
     """Decision variable wrapper around OR-Tools Variable."""
 
-    _parameter: Any  # Will be Parameter at runtime
+    _parameter: Parameter
 
     def __init__(self, p: Any, sign: str):
         super().__init__(name=p.name, name_cn=p.name_cn, sign=sign)
         self._parameter = p
-        # vtype will be set to pywraplp.Variable when OR-Tools is imported
+        self.vtype = pywraplp.Variable
 
     @property
     def id(self) -> int:
-        return self._parameter.id  # type: ignore[no-any-return]
+        return self._parameter.id
 
     @property
     def parameter(self) -> Any:
@@ -63,4 +66,4 @@ class Constr(Symbol):
 
     def __init__(self, name: str, name_cn: str, sign: str):
         super().__init__(name, name_cn, sign)
-        # vtype will be set to pywraplp.Constraint when OR-Tools is imported
+        self.vtype = pywraplp.Constraint

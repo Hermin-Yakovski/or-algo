@@ -1,4 +1,6 @@
 """LpStep hierarchy for LP model building."""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import itertools
 from typing import TYPE_CHECKING
@@ -15,19 +17,19 @@ if TYPE_CHECKING:
 
     from .symbol import Symbol, Var, Constr
 
+
 class LpStep(ABC):
     """Abstract base class for LP model building steps."""
 
-    def __init__(self, symbol: "Symbol"):
+    def __init__(self, symbol: Symbol):
         super().__init__()
         self._symbol = symbol
 
     @abstractmethod
-    def run(
-        self,
-        data: "Register[Parameter]",
-        model: "pywraplp.Solver",
-        var: "Register[Symbol]"
+    def run(self,
+        data: Register[Parameter],
+        model: pywraplp.Solver,
+        var: Register[Var],
     ) -> None:
         """Execute this step to build the LP model.
 
@@ -41,17 +43,17 @@ class LpStep(ABC):
 
 class CreateVar(LpStep, ABC):
     """Base class for variable creation steps."""
-
-    _weight: "Register[Symbol]"
-    _lb: "Register[Symbol]"
-    _ub: "Register[Symbol]"
+    _symbol: Var
+    _weight: Register[Var]
+    _lb: Register[Var]
+    _ub: Register[Var]
 
     def __init__(
         self,
-        symbol: "Var",
-        weight: "Register[Symbol]",
-        lb: "Register[Symbol]",
-        ub: "Register[Symbol]"
+        symbol: Var,
+        weight: Register[Var],
+        lb: Register[Var],
+        ub: Register[Var],
     ):
         super().__init__(symbol)
         self._weight = weight
@@ -75,29 +77,28 @@ class CreateVar(LpStep, ABC):
         return vtype_mapping[vtype]
 
     @abstractmethod
-    def run(
-        self,
-        data: "Register[Parameter]",
-        model: "pywraplp.Solver",
-        var: "Register[Symbol]"
+    def run(self,
+        data: Register[Parameter],
+        model: pywraplp.Solver,
+        var: Register[Var],
     ) -> None:
         """Create variables in the model."""
         pass
 
-    def _create(self, data: "Register[Parameter]", model: "pywraplp.Solver", var: "Register[Symbol]",
-        primary_key: "Parameter",
-        dimension: "Tuple[Dimension, ...]",
-        weight: "Optional[float]" = None,
-        lb: "Optional[float]" = None,
-        ub: "Optional[float]" = None,
+    def _create(self, data: Register[Parameter], model: pywraplp.Solver, var: Register[Var],
+        primary_key: Parameter,
+        dimension: Tuple[Dimension, ...],
+        weight: Optional[float] = None,
+        lb: Optional[float] = None,
+        ub: Optional[float] = None,
         *,
         min_weight: float = 1e-6,
-        metric: "Optional[Method]" = None,
-        which: "Optional[Tuple[bool, ...]]" = None,
+        metric: Optional[int] = None,
+        which: Optional[Tuple[bool, ...]] = None,
         sense : str = 'minimize',
         clear: bool = False,
-        skip: "Optional[Callable[[tuple[int, ...]], bool]]" = None,
-        ) -> int:
+        skip: Optional[Callable[[tuple[int, ...]], bool]] = None,
+    ) -> int:
         """
         Add variables in batch
 
@@ -107,7 +108,7 @@ class CreateVar(LpStep, ABC):
             s.a. self.run()
         model : pywraplp.Solver
             OR-Tools solver instance
-        var : Register[Symbol]
+        var : Register[Var]
             s.a. self.run()
         primary_key : Parameter
             The parameter, usually Id, that specifies dimensions of the scenario. The implementation assumes that this
@@ -223,15 +224,14 @@ class CreateVar(LpStep, ABC):
 class CreateConstr(LpStep, ABC):
     """Base class for constraint creation steps."""
 
-    def __init__(self, symbol: "Constr"):
+    def __init__(self, symbol: Constr):
         super().__init__(symbol)
 
     @abstractmethod
-    def run(
-        self,
-        data: "Register[Parameter]",
-        model: "pywraplp.Solver",
-        var: "Register[Symbol]"
+    def run(self,
+        data: Register[Parameter],
+        model: pywraplp.Solver,
+        var: Register[Var],
     ) -> None:
         """Create constraints in the model."""
         pass
@@ -244,16 +244,15 @@ class CreateConstrCalculateMetric(CreateConstr):
     Constraints are created but not stored.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         from or_algo.lp.symbol import Constr
 
         super().__init__(Constr('CalculateMetric', '', 'CalculateMetric'))
 
-    def run(
-        self,
-        data: "Register[Parameter]",
-        model: "pywraplp.Solver",
-        var: "Register[Symbol]"
+    def run(self,
+        data: Register[Parameter],
+        model: pywraplp.Solver,
+        var: Register[Var],
     ) -> None:
         """Create metric aggregation constraints for variables with Metric dimension.
 
@@ -262,7 +261,6 @@ class CreateConstrCalculateMetric(CreateConstr):
             model: OR-Tools solver instance
             var: Register for storing variables/constraints
         """
-        from or_algo.lp.symbol import Var
 
         # Iterate through all Var instances in var
         for v in var:
@@ -294,7 +292,7 @@ class CreateConstrCalculateMetric(CreateConstr):
                         ]
 
                         # Create equality constraint
-                        constraint = model.Add(
+                        model.Add(
                             metric_var == sum(base_vars),
                             name=f'{self._symbol.name}-{v.sign}({",".join(d.sign for d in dimension)})({",".join(str(ix) for ix in index)})_'
                         )
@@ -347,19 +345,20 @@ class CreateConstrCalculateMetric(CreateConstr):
 
 
 class Publish(LpStep):
+    _symbol: Var
     _zeros: bool
-    _dimension: "Tuple[Dimension, ...]"
+    _dimension: Tuple[Dimension, ...]
     _threshold: float
-    _target: "Tuple[int, ...]"
+    _target: Optional[Tuple[int, ...]]
 
-    def __init__(self, symbol: "Symbol", dimension: "Tuple[Dimension, ...]", target: "Tuple[int, ...]" = None, zeros: bool = False, threshold: float = 1e-6):
+    def __init__(self, symbol: Var, dimension: Tuple[Dimension, ...], target: Optional[Tuple[int, ...]] = None, zeros: bool = False, threshold: float = 1e-6):
         super().__init__(symbol)
         self._dimension = dimension
         self._zeros = zeros
         self._threshold = threshold
         self._target = target
 
-    def run(self, data: "Register[Parameter]", model: "pywraplp.Solver", register: "Register[Symbol]") -> None:
+    def run(self, data: Register[Parameter], model: pywraplp.Solver, register: Register[Var]) -> None:
         for index in register.select(self._symbol, self._dimension, self._target):
             parameter = self._symbol.parameter
             quantity = register[self._symbol][self._dimension][index].solution_value()

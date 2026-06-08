@@ -161,7 +161,7 @@ class Algorithm:
             tasks[task_id] = SolverTask(solver_type, args, kwargs, dependencies, task_id)
 
         # 3. Track running futures and completed tasks
-        futures: dict[Future, int] = {}
+        futures: dict[Future[Register[Parameter]], int] = {}
         completed: set[int] = set()
 
         # 4. Submit initially ready tasks

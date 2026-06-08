@@ -9,7 +9,7 @@ packages = [{include = "or_algo"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 ortools = "^9.15.6755"
-register = {path = "../register/dist/register-0.1.0-py3-none-any.whl"}
+register = {path = "D:/github/register/dist/register-0.1.0-py3-none-any.whl"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
@@ -18,10 +18,12 @@ mypy = "^1.10"
 pytest-cov = "^7.1.0"
 
 [tool.ruff]
+exclude = ["tests"]
 line-length = 100
 target-version = "py311"
 
 [tool.mypy]
+exclude = ["tests"]
 python_version = "3.11"
 strict = true
 warn_return_any = true
@@ -29,6 +31,10 @@ warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 module = "register"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "ortools.*"
 ignore_missing_imports = true
 
 [build-system]
