@@ -30,9 +30,7 @@ reg[k][d1, d2,][:, :,]      # slicing
 | 4 | `Constr` | `ConstrKey` |
 | 5 | `Register.ALL` | `slice(None)` |
 | 6 | `data.select(key, (d,))` | `data[key][d,].keys()` |
-| 7 | `reg.select(v, dims, prefix)` | `reg[v][dims,][*prefix, :]` |
-| 8 | `space.get(idx, default)` | `space[idx,] if idx in space else default` |
-| 9 | `reg[k][(d1, d2)][(0, 1)]` | `reg[k][d1, d2,][0, 1,]` |
+| 7 | `reg[k][(d1, d2)][(0, 1)]` | `reg[k][d1, d2,][0, 1,]` |
 
 ## Core Package
 
