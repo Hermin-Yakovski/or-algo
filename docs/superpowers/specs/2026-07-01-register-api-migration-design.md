@@ -181,7 +181,7 @@ class LpStep(ABC):
 
 **`CreateVar`:**
 
-Discard `weight`, `lb`, `ub` from `__init__` and fields:
+Discard `weight`, `lb`, `ub` from `__init__` and fields. Delete `_create` method entirely.
 
 ```python
 class CreateVar(LpStep, ABC):
@@ -192,53 +192,6 @@ class CreateVar(LpStep, ABC):
 ```
 
 `vtype` property — docstring/error message updates only (`Parameter` → `NumKey`).
-
-`_create` signature:
-
-```python
-def _create(self,
-    data: Register[RegisterKey],
-    model: pywraplp.Solver,
-    var: Register[VarKey],
-    primary_key: RegisterKey,
-    dimension: Tuple[Dimension, ...],
-    weight: float = 0,
-    lb: float = 0,
-    ub: Optional[float] = None,
-    *,
-    min_weight: float = 1e-6,
-    metric: Optional[int] = None,
-    which: Optional[Tuple[bool, ...]] = None,
-    sense: str = 'minimize',
-    clear: bool = False,
-    skip: Optional[Callable[[tuple[int, ...]], bool]] = None,
-) -> int:
-```
-
-`_create` body — simplified (no more `self._weight`/`self._lb`/`self._ub` lookups):
-
-```python
-# Pop old dimension data — unchanged
-data[self._symbol.parameter].pop(dimension_final,)
-
-# Iterate primary key per dimension
-# Old: data.select(primary_key, (d,))
-# New:
-data[primary_key][d,].keys()
-
-# Wildcard index
-# Old: Register.ALL
-# New:
-slice(None)
-
-# Bounds and weight — used directly from parameters, no register lookups
-lb_ = lb
-ub_ = ub if ub is not None else model.infinity()
-weight_ = weight
-
-# Write variable to register
-var[self._symbol][dimension_final,][index_final,] = variable
-```
 
 **`CreateConstr`:**
 
