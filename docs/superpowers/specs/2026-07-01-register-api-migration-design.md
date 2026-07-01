@@ -69,45 +69,66 @@ def execute(self, reg: Register[RegisterKey]) -> Register[RegisterKey]:
 
 **Deleted:** `Symbol` base class.
 
-**`VarKey(RegisterKey)`:**
+**`VarKey(NumKey)`:**
 
 ```python
-class VarKey(RegisterKey):
-    _parameter: NumKey
+class VarKey(NumKey):
     _sign: str
 
-    def __init__(self, p: NumKey, sign: str):
-        self._parameter = p
+    def __init__(self, id: int, name: str, name_cn: str, sign: str, vtype: type = float):
+        super().__init__(id, name, name_cn, vtype)
         self._sign = sign
-
-    @property
-    def id(self) -> int:
-        return self._parameter.id
-
-    @property
-    def name(self) -> str:
-        return self._parameter.name
-
-    @property
-    def name_cn(self) -> str:
-        return self._parameter.name_cn
 
     @property
     def sign(self) -> str:
         return self._sign
 
-    @property
-    def parameter(self) -> NumKey:
-        return self._parameter
-
     def validate(self, selected: Selected, **kwargs) -> dict[tuple[int, ...], bool]:
         return {k: isinstance(v, pywraplp.Variable) for k, v in selected.items()}
+
+    @delegable
+    def set_weight(self, selected: Selected, *, model: pywraplp.Solver, weight: Register[NumKey]) -> None:
+        w_space = weight[self][selected._dims,]
+        for index, var in selected.items():
+            w = w_space[index,] if index in w_space else 0
+            model.Objective().SetCoefficient(var, w)
+
+    @delegable
+    def set_lb(self, selected: Selected, *, model: pywraplp.Solver, lb: Register[NumKey]) -> None:
+        lb_space = lb[self][selected._dims,]
+        for index, var in selected.items():
+            if index in lb_space:
+                dim_signs = ','.join(d.sign for d in selected._dims)
+                idx_str = ','.join(str(i) for i in index)
+                model.Add(var >= lb_space[index,],
+                    name=f'{self.sign}({dim_signs},)({idx_str},)_lb')
+
+    @delegable
+    def set_ub(self, selected: Selected, *, model: pywraplp.Solver, ub: Register[NumKey]) -> None:
+        ub_space = ub[self][selected._dims,]
+        for index, var in selected.items():
+            if index in ub_space:
+                dim_signs = ','.join(d.sign for d in selected._dims)
+                idx_str = ','.join(str(i) for i in index)
+                model.Add(var <= ub_space[index,],
+                    name=f'{self.sign}({dim_signs},)({idx_str},)_ub')
 ```
 
-- `id`, `name`, `name_cn` delegated to wrapped `NumKey`
+- Inherits from `NumKey` — gets `id`, `name`, `name_cn`, `vtype` directly
 - `sign` is own field
 - `validate` checks `isinstance(v, pywraplp.Variable)`
-- Inherits `__hash__`/`__eq__` from `_BaseKey`
+- `@delegable` methods recover weight/lb/ub via `Selection` proxy:
+  - `set_weight` — sets objective coefficients on the model
+  - `set_lb` / `set_ub` — adds bound constraints to the model
+- Uses `selected._dims` (protected, accepted for now) for dimension lookup and constraint naming
+
+**Caller usage:**
+```python
+# After CreateVar.run() creates variables:
+var[var_key][dims,].all.set_weight(model=model, weight=weight_reg)
+var[var_key][dims,].all.set_lb(model=model, lb=lb_reg)
+var[var_key][dims,].all.set_ub(model=model, ub=ub_reg)
+```
 
 **`ConstrKey(RegisterKey)`:**
 
@@ -191,7 +212,7 @@ class CreateVar(LpStep, ABC):
         super().__init__(symbol)
 ```
 
-`vtype` property — docstring/error message updates only (`Parameter` → `NumKey`).
+`vtype` property — uses `self._symbol.vtype` directly (VarKey IS a NumKey, no more `.parameter`).
 
 **`CreateConstr`:**
 
@@ -246,21 +267,19 @@ class Publish(LpStep):
         space = register[self._symbol][self._dimension,]
         sel = space.all if self._target is None else space[self._target]
         for index in sel._data:
-            parameter = self._symbol.parameter
             quantity = register[self._symbol][self._dimension,][index,].solution_value()
-            if parameter.vtype is int:
+            if self._symbol.vtype is int:
                 quantity = int(round(quantity, 0))
-            elif parameter.vtype is bool:
+            elif self._symbol.vtype is bool:
                 quantity = bool(round(quantity, 0))
-            elif parameter.vtype is float:
+            elif self._symbol.vtype is float:
                 pass
             else:
                 raise exception.BuildLpStepException(
-                    f"Unsupported vtype {parameter.vtype} while publishing variable {self._symbol.name}"
+                    f"Unsupported vtype {self._symbol.vtype} while publishing variable {self._symbol.name}"
                 )
             if self._zeros or (quantity > self._threshold):
-                key = self._symbol.parameter
-                data[key][self._dimension,][index,] = quantity
+                data[self._symbol][self._dimension,][index,] = quantity
 ```
 
 ### `or_algo/lp/solver.py`
