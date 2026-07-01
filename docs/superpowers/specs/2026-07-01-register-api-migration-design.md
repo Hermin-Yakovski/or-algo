@@ -88,36 +88,40 @@ class VarKey(NumKey):
 
     @delegable
     def sum(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
-        name = f'{self.sign}_sum'
+        dim_signs = ','.join(d.sign for d in selected._dims)
+        name = f'{self.sign}({dim_signs},)_sum'
         sum_var = model.NumVar(-model.infinity(), model.infinity(), name)
         model.Add(sum_var == sum(selected.values()), name=f'{name}_constr')
         return sum_var
 
     @delegable
     def min(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
-        name = f'{self.sign}_min'
+        dim_signs = ','.join(d.sign for d in selected._dims)
+        name = f'{self.sign}({dim_signs},)_min'
         min_var = model.NumVar(-model.infinity(), model.infinity(), name)
         for idx, var in selected.items():
             idx_str = ','.join(str(i) for i in idx)
-            model.Add(min_var <= var, name=f'{name}({idx_str},)')
+            model.Add(min_var <= var, name=f'{self.sign}({dim_signs},)({idx_str},)_min')
         return min_var
 
     @delegable
     def max(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
-        name = f'{self.sign}_max'
+        dim_signs = ','.join(d.sign for d in selected._dims)
+        name = f'{self.sign}({dim_signs},)_max'
         max_var = model.NumVar(-model.infinity(), model.infinity(), name)
         for idx, var in selected.items():
             idx_str = ','.join(str(i) for i in idx)
-            model.Add(max_var >= var, name=f'{name}({idx_str},)')
+            model.Add(max_var >= var, name=f'{self.sign}({dim_signs},)({idx_str},)_max')
         return max_var
 
     @delegable
     def range(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
-        name = f'{self.sign}_range'
+        dim_signs = ','.join(d.sign for d in selected._dims)
+        name = f'{self.sign}({dim_signs},)_range'
         range_var = model.NumVar(0, model.infinity(), name)
         for (idx1, v1), (idx2, v2) in itertools.permutations(selected.items(), 2):
             idx_str = ','.join(str(i) for i in idx1 + idx2)
-            model.Add(range_var >= v1 - v2, name=f'{name}({idx_str},)')
+            model.Add(range_var >= v1 - v2, name=f'{self.sign}({dim_signs},)({idx_str},)_range')
         return range_var
 
     @delegable
