@@ -87,6 +87,10 @@ class VarKey(NumKey):
         return {k: isinstance(v, pywraplp.Variable) for k, v in selected.items()}
 
     @delegable
+    def sum(self, selected: Selected) -> pywraplp.LinearExpr:
+        return sum(selected.values())
+
+    @delegable
     def set_weight(self, selected: Selected, *, model: pywraplp.Solver, weight: Register[NumKey]) -> None:
         w_space = weight[self][selected._dims,]
         for index, var in selected.items():
@@ -118,6 +122,7 @@ class VarKey(NumKey):
 - `sign` is own field
 - `validate` checks `isinstance(v, pywraplp.Variable)`
 - `@delegable` methods recover weight/lb/ub via `Selection` proxy:
+  - `sum` — returns `pywraplp.LinearExpr` (overrides `NumKey.sum`)
   - `set_weight` — sets objective coefficients on the model
   - `set_lb` / `set_ub` — adds bound constraints to the model
 - Uses `selected._dims` (protected, accepted for now) for dimension lookup and constraint naming
