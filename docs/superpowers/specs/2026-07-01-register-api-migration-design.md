@@ -90,31 +90,34 @@ class VarKey(NumKey):
     def sum(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
         name = f'{self.sign}_sum'
         sum_var = model.NumVar(-model.infinity(), model.infinity(), name)
-        model.Add(sum_var == sum(selected.values()))
+        model.Add(sum_var == sum(selected.values()), name=f'{name}_constr')
         return sum_var
 
     @delegable
     def min(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
         name = f'{self.sign}_min'
         min_var = model.NumVar(-model.infinity(), model.infinity(), name)
-        for var in selected.values():
-            model.Add(min_var <= var)
+        for idx, var in selected.items():
+            idx_str = ','.join(str(i) for i in idx)
+            model.Add(min_var <= var, name=f'{name}({idx_str},)')
         return min_var
 
     @delegable
     def max(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
         name = f'{self.sign}_max'
         max_var = model.NumVar(-model.infinity(), model.infinity(), name)
-        for var in selected.values():
-            model.Add(max_var >= var)
+        for idx, var in selected.items():
+            idx_str = ','.join(str(i) for i in idx)
+            model.Add(max_var >= var, name=f'{name}({idx_str},)')
         return max_var
 
     @delegable
     def range(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
         name = f'{self.sign}_range'
         range_var = model.NumVar(0, model.infinity(), name)
-        for v1, v2 in itertools.permutations(selected.values(), 2):
-            model.Add(range_var >= v1 - v2)
+        for (idx1, v1), (idx2, v2) in itertools.permutations(selected.items(), 2):
+            idx_str = ','.join(str(i) for i in idx1 + idx2)
+            model.Add(range_var >= v1 - v2, name=f'{name}({idx_str},)')
         return range_var
 
     @delegable
