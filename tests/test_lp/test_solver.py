@@ -5,8 +5,7 @@ from or_algo.lp.solver import LpSolver
 from or_algo import Solver
 from or_algo.lp.step import CreateVar, CreateConstr
 from or_algo.lp.symbol import VarKey, ConstrKey
-from register import Register, RegisterKey, NumKey, Dimension
-from ortools.linear_solver import pywraplp
+from register import Register, Dimension
 
 
 def test_lp_solver_is_solver():
