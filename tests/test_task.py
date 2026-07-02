@@ -3,24 +3,18 @@
 import pytest
 from or_algo.task import SolverTask
 from or_algo.solver import Solver
-from register import Register, Parameter
+from register import Register, RegisterKey
 
 
 class DummySolver(Solver):
-    """Test solver that returns data unchanged."""
-
-    def solve(self, data: Register[Parameter]) -> Register[Parameter]:
+    def solve(self, data: Register[RegisterKey]) -> Register[RegisterKey]:
         return data
 
 
 def test_solver_task_initialization():
-    """Test SolverTask initialization with all parameters."""
     task = SolverTask(
-        solver_type=DummySolver,
-        args=(),
-        kwargs={},
-        dependencies=[1, 2],
-        task_id=3
+        solver_type=DummySolver, args=(), kwargs={},
+        dependencies=[1, 2], task_id=3
     )
     assert task.solver_type == DummySolver
     assert task.dependencies == [1, 2]
@@ -30,19 +24,15 @@ def test_solver_task_initialization():
 
 
 def test_solver_task_state_transitions():
-    """Test state transitions from pending to running to completed."""
     task = SolverTask(DummySolver, (), {}, [], 1)
     assert task.state == "pending"
-
     task.mark_running()
     assert task.state == "running"
-
     task.mark_completed()
     assert task.state == "completed"
 
 
 def test_solver_task_failure_state():
-    """Test state transition to failed with exception."""
     task = SolverTask(DummySolver, (), {}, [], 1)
     exc = ValueError("test error")
     task.mark_failed(exc)
@@ -51,22 +41,19 @@ def test_solver_task_failure_state():
 
 
 def test_solver_task_execute_success():
-    """Test execute() method with successful solver."""
     task = SolverTask(DummySolver, (), {}, [], 1)
-    data = Register[Parameter]()
+    data = Register()
     task.execute(data)
     assert task.state == "completed"
 
 
 def test_solver_task_execute_failure():
-    """Test execute() method with failing solver."""
-
     class FailingSolver(Solver):
-        def solve(self, data: Register[Parameter]) -> Register[Parameter]:
+        def solve(self, data: Register[RegisterKey]) -> Register[RegisterKey]:
             raise ValueError("solver failed")
 
     task = SolverTask(FailingSolver, (), {}, [], 1)
-    data = Register[Parameter]()
+    data = Register()
     with pytest.raises(ValueError, match="solver failed"):
         task.execute(data)
     assert task.state == "failed"
@@ -74,12 +61,9 @@ def test_solver_task_execute_failure():
 
 
 def test_solver_task_execute_returns_register():
-    """Test that execute() returns the modified Register."""
     task = SolverTask(DummySolver, (), {}, [], 1)
-    reg = Register[Parameter]()
+    reg = Register()
     reg._data["test"] = "input"
-
     result_reg = task.execute(reg)
-
-    assert result_reg is reg  # Returns the same Register instance
+    assert result_reg is reg
     assert isinstance(result_reg, Register)

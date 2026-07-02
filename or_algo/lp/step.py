@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from typing import Callable, Optional, Tuple
 
     from ortools.linear_solver import pywraplp
-    from register import Dimension, Parameter
+    from register import Dimension, RegisterKey
 
     from .symbol import Symbol, Var, Constr
 
@@ -27,7 +27,7 @@ class LpStep(ABC):
 
     @abstractmethod
     def run(self,
-        data: Register[Parameter],
+        data: Register[RegisterKey],
         model: pywraplp.Solver,
         var: Register[Var],
     ) -> None:
@@ -78,15 +78,15 @@ class CreateVar(LpStep, ABC):
 
     @abstractmethod
     def run(self,
-        data: Register[Parameter],
+        data: Register[RegisterKey],
         model: pywraplp.Solver,
         var: Register[Var],
     ) -> None:
         """Create variables in the model."""
         pass
 
-    def _create(self, data: Register[Parameter], model: pywraplp.Solver, var: Register[Var],
-        primary_key: Parameter,
+    def _create(self, data: Register[RegisterKey], model: pywraplp.Solver, var: Register[Var],
+        primary_key: RegisterKey,
         dimension: Tuple[Dimension, ...],
         weight: Optional[float] = None,
         lb: Optional[float] = None,
@@ -104,7 +104,7 @@ class CreateVar(LpStep, ABC):
 
         parameters
         ----------
-        data : Register[Parameter]
+        data : Register[RegisterKey]
             s.a. self.run()
         model : pywraplp.Solver
             OR-Tools solver instance
@@ -229,7 +229,7 @@ class CreateConstr(LpStep, ABC):
 
     @abstractmethod
     def run(self,
-        data: Register[Parameter],
+        data: Register[RegisterKey],
         model: pywraplp.Solver,
         var: Register[Var],
     ) -> None:
@@ -250,7 +250,7 @@ class CreateConstrCalculateMetric(CreateConstr):
         super().__init__(Constr('CalculateMetric', '', 'CalculateMetric'))
 
     def run(self,
-        data: Register[Parameter],
+        data: Register[RegisterKey],
         model: pywraplp.Solver,
         var: Register[Var],
     ) -> None:
@@ -358,7 +358,7 @@ class Publish(LpStep):
         self._threshold = threshold
         self._target = target
 
-    def run(self, data: Register[Parameter], model: pywraplp.Solver, register: Register[Var]) -> None:
+    def run(self, data: Register[RegisterKey], model: pywraplp.Solver, register: Register[Var]) -> None:
         for index in register.select(self._symbol, self._dimension, self._target):
             parameter = self._symbol.parameter
             quantity = register[self._symbol][self._dimension][index].solution_value()

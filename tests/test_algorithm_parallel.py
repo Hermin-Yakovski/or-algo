@@ -3,7 +3,7 @@
 import pickle
 import pytest
 from concurrent.futures import ProcessPoolExecutor
-from register import Register, Parameter, Id, Index
+from register import Register, RegisterKey, Id, Index
 from or_algo.solver import Solver
 from or_algo.algorithm import Algorithm
 from or_algo.exception import OrAlgoException
@@ -16,7 +16,7 @@ class MarkerSolver(Solver):
         super().__init__()
         self.marker = marker
 
-    def solve(self, data: Register[Parameter]) -> Register[Parameter]:
+    def solve(self, data: Register[RegisterKey]) -> Register[RegisterKey]:
         data[Id][(Index,)][(0,)] = self.marker
         return data
 
@@ -24,7 +24,7 @@ class MarkerSolver(Solver):
 class FailingSolver(Solver):
     """A solver that always fails."""
 
-    def solve(self, data: Register[Parameter]) -> Register[Parameter]:
+    def solve(self, data: Register[RegisterKey]) -> Register[RegisterKey]:
         raise ValueError("intentional failure")
 
 
@@ -40,7 +40,7 @@ def test_parallel_solve_cycle_detection():
     algo._dependency_graph[2] = [1]
     algo._dependency_graph[3] = [2]
 
-    reg = Register[Parameter]()
+    reg = Register()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         with pytest.raises(OrAlgoException) as exc_info:
@@ -57,7 +57,7 @@ def test_parallel_solve_self_loop_detection():
     # Create a self-loop
     algo._dependency_graph[1] = [1]
 
-    reg = Register[Parameter]()
+    reg = Register()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         with pytest.raises(OrAlgoException) as exc_info:
@@ -69,7 +69,7 @@ def test_parallel_solve_self_loop_detection():
 def test_parallel_solve_empty_algorithm():
     """Test that parallel_solve handles an empty algorithm gracefully."""
     algo = Algorithm()
-    reg = Register[Parameter]()
+    reg = Register()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         algo.parallel_solve(reg, executor)
@@ -81,7 +81,7 @@ def test_parallel_solve_returns_same_register():
     algo = Algorithm()
     algo.append(MarkerSolver, "test")
 
-    reg = Register[Parameter]()
+    reg = Register()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         algo.parallel_solve(reg, executor)
@@ -95,7 +95,7 @@ def test_parallel_solve_task_creation():
     algo.append(MarkerSolver, "task1", after=[])
     algo.append(MarkerSolver, "task2", after=[1])
 
-    reg = Register[Parameter]()
+    reg = Register()
 
     # This should not raise an exception during task creation
     # (it will fail during execution due to pickling issues, but that's expected)
@@ -115,7 +115,7 @@ def test_parallel_solve_dag_validation_before_execution():
 
     # Don't create a cycle, so validation should pass
     # The tasks will fail during execution, but that's after validation
-    reg = Register[Parameter]()
+    reg = Register()
 
     with ProcessPoolExecutor(max_workers=2) as executor:
         try:
@@ -340,7 +340,7 @@ def test_parallel_solve_dependent_tasks_see_merged_results():
             self.read_key = read_key
             self.result_value = result_value
 
-        def solve(self, data: Register[Parameter]) -> Register[Parameter]:
+        def solve(self, data: Register[RegisterKey]) -> Register[RegisterKey]:
             # Read from predecessor if specified
             if self.read_key:
                 param, dim, idx = self.read_key
@@ -360,7 +360,7 @@ def test_parallel_solve_dependent_tasks_see_merged_results():
     # Task B reads what A wrote, writes "B"
     id_b = algo.append(WriteAndReadSolver, (Id, (Index,), (1,)), (Id, (Index,), (0,)), result_value="B", after=[id_a])
 
-    reg = Register[Parameter]()
+    reg = Register()
 
     try:
         with ProcessPoolExecutor(max_workers=2) as executor:

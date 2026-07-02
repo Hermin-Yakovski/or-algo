@@ -6,7 +6,7 @@ from typing import Any, TYPE_CHECKING
 from ortools.linear_solver import pywraplp
 
 if TYPE_CHECKING:
-    from register import Parameter
+    from register import RegisterKey
 
 
 class Symbol:
@@ -45,7 +45,7 @@ class Symbol:
 class Var(Symbol):
     """Decision variable wrapper around OR-Tools Variable."""
 
-    _parameter: Parameter
+    _parameter: RegisterKey
 
     def __init__(self, p: Any, sign: str):
         super().__init__(name=p.name, name_cn=p.name_cn, sign=sign)

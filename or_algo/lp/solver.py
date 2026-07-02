@@ -13,7 +13,7 @@ from .step import CreateConstrCalculateMetric
 if TYPE_CHECKING:
     from typing import Any, Dict, List, Optional, Tuple, Type
 
-    from register import Register, Parameter
+    from register import Register, RegisterKey
     from or_algo.lp.symbol import Var
     from or_algo.lp.step import LpStep
     from ortools.linear_solver import pywraplp
@@ -23,7 +23,7 @@ class LpSolver(Solver):
     """Linear Programming solver using OR-Tools.
 
     Inherits from or-algo's Solver base class and integrates
-    with Register[Parameter] for data flow.
+    with Register[RegisterKey] for data flow.
     """
 
     _name: str
@@ -102,7 +102,7 @@ class LpSolver(Solver):
                 f"Unsupported step type {step} in {type(self).__name__}.append()"
             )
 
-    def solve(self, data: Register[Parameter]) -> Register[Parameter]:
+    def solve(self, data: Register[RegisterKey]) -> Register[RegisterKey]:
         """Build and solve the LP model.
 
         Args:

@@ -1,7 +1,7 @@
 """Algorithm orchestrator class for or-algo package."""
 
 from typing import Any, Optional, Type
-from register import Register, Parameter
+from register import Register, RegisterKey
 
 from concurrent.futures import ProcessPoolExecutor, as_completed, Future
 
@@ -100,7 +100,7 @@ class Algorithm:
                     ready.append(task_id)
         return ready
 
-    def _merge_register(self, target: Register[Parameter], source: Register[Parameter]) -> None:
+    def _merge_register(self, target: Register[RegisterKey], source: Register[RegisterKey]) -> None:
         """Merge source Register into target Register.
 
         Iterates through all Parameters and dimensions in source,
@@ -116,7 +116,7 @@ class Algorithm:
                 target[var][dimensions].clear()
                 target[var][dimensions].update(source[var][dimensions])
 
-    def solve(self, data: Register[Parameter]) -> None:
+    def solve(self, data: Register[RegisterKey]) -> None:
         """Execute all solvers in sequence.
 
         Args:
@@ -137,7 +137,7 @@ class Algorithm:
 
     def parallel_solve(
         self,
-        data: Register[Parameter],
+        data: Register[RegisterKey],
         executor: ProcessPoolExecutor
     ) -> None:
         """Execute solvers in parallel using DAG-based lazy resolution.
@@ -161,7 +161,7 @@ class Algorithm:
             tasks[task_id] = SolverTask(solver_type, args, kwargs, dependencies, task_id)
 
         # 3. Track running futures and completed tasks
-        futures: dict[Future[Register[Parameter]], int] = {}
+        futures: dict[Future[Register[RegisterKey]], int] = {}
         completed: set[int] = set()
 
         # 4. Submit initially ready tasks

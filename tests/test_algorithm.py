@@ -1,7 +1,7 @@
 """Tests for or_algo.algorithm module."""
 
 import pytest
-from register import Register, Parameter, Id, Index
+from register import Register, RegisterKey, Id, Index
 from or_algo.solver import Solver
 from or_algo.algorithm import Algorithm
 from or_algo.exception import OrAlgoException
@@ -16,7 +16,7 @@ class SuccessSolver(Solver):
         self.marker = marker
         self.called = False
 
-    def solve(self, data: Register[Parameter]) -> None:
+    def solve(self, data: Register[RegisterKey]) -> None:
         self.called = True
         data[Id][(Index,)][(0,)] = self.marker
 
@@ -24,7 +24,7 @@ class SuccessSolver(Solver):
 class FailingSolver(Solver):
     """A solver that always fails."""
 
-    def solve(self, data: Register[Parameter]) -> None:
+    def solve(self, data: Register[RegisterKey]) -> None:
         raise ValueError("intentional failure")
 
 
@@ -52,7 +52,7 @@ def test_algorithm_solve_executes_solvers_in_order():
             super().__init__()
             self.marker = marker
 
-        def solve(self, data: Register[Parameter]) -> None:
+        def solve(self, data: Register[RegisterKey]) -> None:
             execution_order.append(self.marker)
 
     algo = Algorithm()
@@ -60,7 +60,7 @@ def test_algorithm_solve_executes_solvers_in_order():
     algo.append(OrderSolver, "second")
     algo.append(OrderSolver, "third")
 
-    algo.solve(Register[Parameter]())
+    algo.solve(Register())
     assert execution_order == ["first", "second", "third"]
 
 
@@ -73,7 +73,7 @@ def test_algorithm_solve_stops_on_first_failure():
             super().__init__()
             self.marker = marker
 
-        def solve(self, data: Register[Parameter]) -> None:
+        def solve(self, data: Register[RegisterKey]) -> None:
             execution_order.append(self.marker)
             if self.marker == "fail":
                 raise ValueError("intentional failure")
@@ -84,7 +84,7 @@ def test_algorithm_solve_stops_on_first_failure():
     algo.append(TrackingSolver, "never_reached")
 
     with pytest.raises(OrAlgoException) as exc_info:
-        algo.solve(Register[Parameter]())
+        algo.solve(Register())
 
     # Verify execution stopped at failure
     assert execution_order == ["first", "fail"]
@@ -101,13 +101,13 @@ def test_algorithm_solve_with_solver_args():
             super().__init__()
             self.value = value
 
-        def solve(self, data: Register[Parameter]) -> None:
+        def solve(self, data: Register[RegisterKey]) -> None:
             data[Id][(Index,)][(0,)] = f"value={self.value}"
 
     algo = Algorithm()
     algo.append(ConfiguredSolver, 42)
 
-    register = Register[Parameter]()
+    register = Register()
     algo.solve(register)
 
     assert register[Id][(Index,)][(0,)] == "value=42"
@@ -121,13 +121,13 @@ def test_algorithm_solve_with_solver_kwargs():
             self.value = value
             self.flag = flag
 
-        def solve(self, data: Register[Parameter]) -> None:
+        def solve(self, data: Register[RegisterKey]) -> None:
             data[Id][(Index,)][(0,)] = f"value={self.value},flag={self.flag}"
 
     algo = Algorithm()
     algo.append(ConfiguredSolver, 42, flag=True)
 
-    register = Register[Parameter]()
+    register = Register()
     algo.solve(register)
 
     assert register[Id][(Index,)][(0,)] == "value=42,flag=True"
@@ -142,13 +142,13 @@ def test_algorithm_solve_with_both_args_and_kwargs():
             self.b = b
             self.c = c
 
-        def solve(self, data: Register[Parameter]) -> None:
+        def solve(self, data: Register[RegisterKey]) -> None:
             data[Id][(Index,)][(0,)] = f"a={self.a},b={self.b},c={self.c}"
 
     algo = Algorithm()
     algo.append(ConfiguredSolver, 1, "two", c=True)
 
-    register = Register[Parameter]()
+    register = Register()
     algo.solve(register)
 
     assert register[Id][(Index,)][(0,)] == "a=1,b=two,c=True"
@@ -160,7 +160,7 @@ def test_algorithm_exception_message():
     algo.append(FailingSolver)
 
     with pytest.raises(OrAlgoException) as exc_info:
-        algo.solve(Register[Parameter]())
+        algo.solve(Register())
 
     assert "FailingSolver" in str(exc_info.value)
     assert "solve()" in str(exc_info.value)
@@ -375,10 +375,10 @@ def test_algorithm_merge_register():
     algo = Algorithm()
 
     # Create source and target registers
-    target = Register[Parameter]()
+    target = Register[RegisterKey]()
     target[Id][(Index,)][(0,)] = "target_value"
 
-    source = Register[Parameter]()
+    source = Register[RegisterKey]()
     source[Id][(Index,)][(1,)] = "source_value"
     source[Id][(Index,)][(0,)] = "overwrite_value"
 

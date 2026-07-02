@@ -22,19 +22,19 @@ if sys.platform == "win32":
 
 
 import pytest
-from register import Register, Parameter, Id, Code, Name, Index
+from register import Register, RegisterKey, Id, Code, Name, Index
 
 
 @pytest.fixture
-def empty_register() -> Register[Parameter]:
+def empty_register() -> Register[RegisterKey]:
     """Provide an empty Register for testing."""
-    return Register[Parameter]()
+    return Register()
 
 
 @pytest.fixture
-def sample_register() -> Register[Parameter]:
+def sample_register() -> Register[RegisterKey]:
     """Provide a Register with sample data for testing."""
-    reg = Register[Parameter]()
+    reg = Register()
     # Add sample data as needed
     reg[Id][(Index,)][(0,)] = 1
     reg[Code][(Index,)][(0,)] = "test_code"
