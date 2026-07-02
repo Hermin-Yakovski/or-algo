@@ -3,20 +3,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from or_algo.lp import Publish
 from ortools.linear_solver import pywraplp
 
 from ..solver import Solver
 from . import exception
-from .step import CreateConstrCalculateMetric
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Tuple, Type
+    from typing import Any, Dict, List, Tuple, Type
 
     from register import Register, RegisterKey
-    from or_algo.lp.symbol import Var
+
+    from or_algo.lp.symbol import VarKey
     from or_algo.lp.step import LpStep
-    from ortools.linear_solver import pywraplp
 
 
 class LpSolver(Solver):
@@ -27,10 +25,7 @@ class LpSolver(Solver):
     """
 
     _name: str
-    _weight: Register[Var]
-    _lb: Register[Var]
-    _ub: Register[Var]
-    _var: Register[Var]
+    _var: Register[VarKey]
     _build_steps: List[Tuple[Type[LpStep], Tuple[Any, ...], Dict[str, Any]]]
     _publish_steps: List[Tuple[Tuple[Any, ...], Dict[str, Any]]]
     _model: pywraplp.Solver
@@ -39,18 +34,12 @@ class LpSolver(Solver):
     def __init__(
         self,
         name: str,
-        weight: Optional[Register[Var]] = None,
-        lb: Optional[Register[Var]] = None,
-        ub: Optional[Register[Var]] = None,
         solver_type: str = 'SCIP'
     ):
         from register import Register
 
         super().__init__(name)
         self._name = name
-        self._weight = Register() if weight is None else weight
-        self._lb = Register() if lb is None else lb
-        self._ub = Register() if ub is None else ub
         self._var = Register()
         self._build_steps = list()
         self._publish_steps = list()
@@ -75,27 +64,15 @@ class LpSolver(Solver):
 
         Args:
             step: LpStep subclass (CreateVar or CreateConstr)
-            *args, **kwargs: Arguments to pass to step.__init__()
+            *args: Arguments to pass to step.__init__()
+            **kwargs: Keyword arguments to pass to step.__init__()
 
         Raises:
             LpSolverException: If step type is unsupported
         """
         from or_algo.lp.step import CreateVar, CreateConstr
 
-        if issubclass(step, CreateVar):
-            # Fill args with (weight, lb, ub) if not provided
-            # CreateVar.__init__ expects: (symbol, weight, lb, ub)
-            # If user provides only symbol, append weight, lb, ub
-            # If user provides symbol + weight, append lb, ub
-            # etc.
-            default_args = (self._weight, self._lb, self._ub)
-            # Calculate how many default args we need to append
-            # args[0] is symbol, so we need up to 3 more args
-            num_provided = len(args)
-            num_needed = max(0, 4 - num_provided)  # 4 = symbol + weight + lb + ub
-            full_args = args + default_args[:num_needed]
-            self._build_steps.append((step, full_args, kwargs))
-        elif issubclass(step, CreateConstr):
+        if issubclass(step, (CreateVar, CreateConstr)):
             self._build_steps.append((step, args, kwargs))
         else:
             raise exception.LpSolverException(
@@ -115,7 +92,7 @@ class LpSolver(Solver):
             BuildLpStepException: If a build step fails
             LpModelOptimizeException: If optimization fails or no solution is found
         """
-        self.append(CreateConstrCalculateMetric,)
+        from or_algo.lp import Publish
 
         # Execute build steps
         for step_type, args, kwargs in self._build_steps:

@@ -2,6 +2,7 @@
 
 from .symbol import VarKey, ConstrKey
 from .step import LpStep, CreateVar, CreateConstr, Publish
+from .solver import LpSolver
 from . import exception
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "CreateVar",
     "CreateConstr",
     "Publish",
+    "LpSolver",
     "exception",
 ]
