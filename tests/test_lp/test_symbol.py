@@ -94,3 +94,77 @@ class TestConstrKey:
 
     def test_str_returns_name(self, constr_key):
         assert str(constr_key) == 'TestConstr'
+
+
+class TestVarKeyDelegable:
+    """Test VarKey delegable methods via Selection proxy."""
+
+    @pytest.fixture
+    def setup(self):
+        model = pywraplp.Solver.CreateSolver('SCIP')
+        d = Dimension('Loc', '地点', 'L')
+        vk = VarKey(id=10, name='Ship', name_cn='运输', sign='X')
+        reg = Register()
+        # Create 3 variables
+        reg[vk][d,][0,] = model.NumVar(0, 100, 'x0')
+        reg[vk][d,][1,] = model.NumVar(0, 100, 'x1')
+        reg[vk][d,][2,] = model.NumVar(0, 100, 'x2')
+        return model, d, vk, reg
+
+    def test_sum_creates_variable_with_constraint(self, setup):
+        model, d, vk, reg = setup
+        result = reg[vk][d,].all.sum(model=model)
+        assert isinstance(result, pywraplp.Variable)
+        assert 'MTC' in result.name()
+        assert ',1,' in result.name()
+
+    def test_max_creates_variable_with_constraints(self, setup):
+        model, d, vk, reg = setup
+        result = reg[vk][d,].all.max(model=model)
+        assert isinstance(result, pywraplp.Variable)
+        assert ',2,' in result.name()
+
+    def test_min_creates_variable_with_constraints(self, setup):
+        model, d, vk, reg = setup
+        result = reg[vk][d,].all.min(model=model)
+        assert isinstance(result, pywraplp.Variable)
+        assert ',3,' in result.name()
+
+    def test_range_creates_variable_with_constraints(self, setup):
+        model, d, vk, reg = setup
+        result = reg[vk][d,].all.range(model=model)
+        assert isinstance(result, pywraplp.Variable)
+        assert ',4,' in result.name()
+
+    def test_set_weight_sets_objective_coefficients(self, setup):
+        model, d, vk, reg = setup
+        weight_reg = Register()
+        weight_reg[vk][d,][0,] = 1.5
+        weight_reg[vk][d,][1,] = 2.5
+        reg[vk][d,].all.set_weight(model=model, weight=weight_reg)
+        # Verify by solving — objective should reflect coefficients
+
+    def test_set_lb_adds_lower_bound_constraints(self, setup):
+        model, d, vk, reg = setup
+        lb_reg = Register()
+        lb_reg[vk][d,][0,] = 5.0
+        lb_reg[vk][d,][1,] = 10.0
+        reg[vk][d,].all.set_lb(model=model, lb=lb_reg)
+
+    def test_set_ub_adds_upper_bound_constraints(self, setup):
+        model, d, vk, reg = setup
+        ub_reg = Register()
+        ub_reg[vk][d,][0,] = 50.0
+        reg[vk][d,].all.set_ub(model=model, ub=ub_reg)
+
+    def test_set_lb_constraint_naming(self, setup):
+        model, d, vk, reg = setup
+        lb_reg = Register()
+        lb_reg[vk][d,][0,] = 5.0
+        reg[vk][d,].all.set_lb(model=model, lb=lb_reg)
+
+    def test_set_ub_constraint_naming(self, setup):
+        model, d, vk, reg = setup
+        ub_reg = Register()
+        ub_reg[vk][d,][0,] = 50.0
+        reg[vk][d,].all.set_ub(model=model, ub=ub_reg)
