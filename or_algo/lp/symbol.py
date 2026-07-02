@@ -28,8 +28,8 @@ class VarKey(NumKey):
         return {k: isinstance(v, pywraplp.Variable) for k, v in selected.items()}
 
     @delegable
-    def sum(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
-        dim_signs = ','.join(d.sign for d in selected._dims)
+    def sum(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
+        dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
         idx_str = ','.join(str(i) for i in next(iter(selected)))
         name = f'{self.sign}({dim_signs},MTC,)({idx_str},1,)'
         sum_var = model.NumVar(-model.infinity(), model.infinity(), name)
@@ -37,8 +37,8 @@ class VarKey(NumKey):
         return sum_var
 
     @delegable
-    def max(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
-        dim_signs = ','.join(d.sign for d in selected._dims)
+    def max(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
+        dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
         idx_str = ','.join(str(i) for i in next(iter(selected)))
         name = f'{self.sign}({dim_signs},MTC,)({idx_str},2,)'
         max_var = model.NumVar(-model.infinity(), model.infinity(), name)
@@ -48,8 +48,8 @@ class VarKey(NumKey):
         return max_var
 
     @delegable
-    def min(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
-        dim_signs = ','.join(d.sign for d in selected._dims)
+    def min(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
+        dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
         idx_str = ','.join(str(i) for i in next(iter(selected)))
         name = f'{self.sign}({dim_signs},MTC,)({idx_str},3,)'
         min_var = model.NumVar(-model.infinity(), model.infinity(), name)
@@ -59,8 +59,8 @@ class VarKey(NumKey):
         return min_var
 
     @delegable
-    def range(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
-        dim_signs = ','.join(d.sign for d in selected._dims)
+    def range(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
+        dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
         idx_str = ','.join(str(i) for i in next(iter(selected)))
         name = f'{self.sign}({dim_signs},MTC,)({idx_str},4,)'
         range_var = model.NumVar(0, model.infinity(), name)
@@ -71,27 +71,27 @@ class VarKey(NumKey):
 
     @delegable
     def set_weight(self, selected: Selected, *, model: pywraplp.Solver, weight: Register[NumKey]) -> None:
-        w_space = weight[self][selected._dims,]
+        w_space = weight[self][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             w = w_space[index,] if index in w_space else 0
             model.Objective().SetCoefficient(var, w)
 
     @delegable
     def set_lb(self, selected: Selected, *, model: pywraplp.Solver, lb: Register[NumKey]) -> None:
-        lb_space = lb[self][selected._dims,]
+        lb_space = lb[self][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             if index in lb_space:
-                dim_signs = ','.join(d.sign for d in selected._dims)
+                dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
                 idx_str = ','.join(str(i) for i in index)
                 model.Add(var >= lb_space[index,],
                     name=f'{self.sign}({dim_signs},)({idx_str},)_lb')
 
     @delegable
     def set_ub(self, selected: Selected, *, model: pywraplp.Solver, ub: Register[NumKey]) -> None:
-        ub_space = ub[self][selected._dims,]
+        ub_space = ub[self][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             if index in ub_space:
-                dim_signs = ','.join(d.sign for d in selected._dims)
+                dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
                 idx_str = ','.join(str(i) for i in index)
                 model.Add(var <= ub_space[index,],
                     name=f'{self.sign}({dim_signs},)({idx_str},)_ub')
