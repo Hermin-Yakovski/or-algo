@@ -1,8 +1,7 @@
 """or-algo LP module: Linear Programming support using OR-Tools."""
 
 from .symbol import VarKey, ConstrKey
-from .step import LpStep, CreateVar, CreateConstr, CreateConstrCalculateMetric, Publish
-from .solver import LpSolver
+from .step import LpStep, CreateVar, CreateConstr, Publish
 from . import exception
 
 __all__ = [
@@ -11,8 +10,6 @@ __all__ = [
     "LpStep",
     "CreateVar",
     "CreateConstr",
-    "CreateConstrCalculateMetric",
     "Publish",
-    "LpSolver",
     "exception",
 ]
