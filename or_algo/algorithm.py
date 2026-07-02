@@ -113,8 +113,8 @@ class Algorithm:
         """
         for var in source:
             for dimensions in source[var]:
-                target[var][dimensions].clear()
-                target[var][dimensions].update(source[var][dimensions])
+                target[var][dimensions]._data.clear()
+                target[var][dimensions].update(source[var][dimensions]._data)
 
     def solve(self, data: Register[RegisterKey]) -> None:
         """Execute all solvers in sequence.
