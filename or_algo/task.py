@@ -1,7 +1,9 @@
 """SolverTask class for parallel execution wrapping."""
 
 from typing import Any
+
 from register import Register, RegisterKey
+
 from .solver import Solver
 
 

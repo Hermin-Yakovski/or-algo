@@ -1,17 +1,17 @@
 """or-algo LP module: Linear Programming support using OR-Tools."""
 
-from .symbol import VarKey, ConstrKey
-from .step import LpStep, CreateVar, CreateConstr, Publish
-from .solver import LpSolver
 from . import exception
+from .solver import LpSolver
+from .step import CreateConstr, CreateVar, LpStep, Publish
+from .symbol import ConstrKey, VarKey
 
 __all__ = [
-    "VarKey",
     "ConstrKey",
-    "LpStep",
-    "CreateVar",
     "CreateConstr",
-    "Publish",
+    "CreateVar",
     "LpSolver",
+    "LpStep",
+    "Publish",
+    "VarKey",
     "exception",
 ]

@@ -1,4 +1,5 @@
 """LpStep hierarchy for LP model building."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -9,12 +10,10 @@ from register import Register, RegisterKey
 from . import exception
 
 if TYPE_CHECKING:
-    from typing import Tuple
-
     from ortools.linear_solver import pywraplp
     from register import Dimension, Selected
 
-    from .symbol import VarKey, ConstrKey
+    from .symbol import ConstrKey, VarKey
 
 
 class LpStep(ABC):
@@ -25,35 +24,37 @@ class LpStep(ABC):
         self._symbol = symbol
 
     @abstractmethod
-    def run(self,
+    def run(
+        self,
         data: Register[RegisterKey],
         model: pywraplp.Solver,
         var: Register[VarKey],
     ) -> None:
         """Execute this step to build the LP model."""
-        pass
 
 
 class CreateVar(LpStep, ABC):
     """Base class for variable creation steps."""
+
     _symbol: VarKey
 
     def __init__(self, symbol: VarKey):
         super().__init__(symbol)
 
-    def _create(self,
+    def _create(
+        self,
         selected: Selected,
         model: pywraplp.Solver,
         var: Register[VarKey],
-        dimension: Tuple[Dimension, ...],
+        dimension: tuple[Dimension, ...],
     ) -> None:
-        dim_signs = ','.join(d.sign for d in dimension)
+        dim_signs = ",".join(d.sign for d in dimension)
         for index in selected:
-            idx_str = ','.join(str(i) for i in index)
-            name = f'{self._symbol.sign}({dim_signs},)({idx_str},)'
-            if self.vtype == 'BINARY':
+            idx_str = ",".join(str(i) for i in index)
+            name = f"{self._symbol.sign}({dim_signs},)({idx_str},)"
+            if self.vtype == "BINARY":
                 v = model.IntVar(0, 1, name)
-            elif self.vtype == 'INTEGER':
+            elif self.vtype == "INTEGER":
                 v = model.IntVar(0, model.infinity(), name)
             else:  # CONTINUOUS
                 v = model.NumVar(0, model.infinity(), name)
@@ -63,26 +64,25 @@ class CreateVar(LpStep, ABC):
     def vtype(self) -> str:
         """Map NumKey vtype to OR-Tools variable type."""
         vtype_mapping = {
-            int: 'INTEGER',
-            float: 'CONTINUOUS',
-            bool: 'BINARY',
+            int: "INTEGER",
+            float: "CONTINUOUS",
+            bool: "BINARY",
         }
         vtype = self._symbol.vtype
         if vtype not in vtype_mapping:
             raise ValueError(
-                f"Unsupported NumKey vtype: {vtype}. "
-                f"Supported types: {list(vtype_mapping.keys())}"
+                f"Unsupported NumKey vtype: {vtype}. Supported types: {list(vtype_mapping.keys())}"
             )
         return vtype_mapping[vtype]
 
     @abstractmethod
-    def run(self,
+    def run(
+        self,
         data: Register[RegisterKey],
         model: pywraplp.Solver,
         var: Register[VarKey],
     ) -> None:
         """Create variables in the model."""
-        pass
 
 
 class CreateConstr(LpStep, ABC):
@@ -92,30 +92,39 @@ class CreateConstr(LpStep, ABC):
         super().__init__(symbol)
 
     @abstractmethod
-    def run(self,
+    def run(
+        self,
         data: Register[RegisterKey],
         model: pywraplp.Solver,
         var: Register[VarKey],
     ) -> None:
         """Create constraints in the model."""
-        pass
 
 
 class Publish(LpStep):
     _symbol: VarKey
     _zeros: bool
-    _dimension: Tuple[Dimension, ...]
+    _dimension: tuple[Dimension, ...]
     _threshold: float
     _target: tuple[slice, ...] | None
 
-    def __init__(self, symbol: VarKey, dimension: Tuple[Dimension, ...], target: tuple[slice, ...] | None = None, zeros: bool = False, threshold: float = 1e-6):
+    def __init__(
+        self,
+        symbol: VarKey,
+        dimension: tuple[Dimension, ...],
+        target: tuple[slice, ...] | None = None,
+        zeros: bool = False,
+        threshold: float = 1e-6,
+    ):
         super().__init__(symbol)
         self._dimension = dimension
         self._zeros = zeros
         self._threshold = threshold
         self._target = target
 
-    def run(self, data: Register[RegisterKey], model: pywraplp.Solver, register: Register[VarKey]) -> None:
+    def run(
+        self, data: Register[RegisterKey], model: pywraplp.Solver, register: Register[VarKey]
+    ) -> None:
         space = register[self._symbol][self._dimension]
         sel = space.all if self._target is None else space[self._target]
         for index in sel:
@@ -127,7 +136,9 @@ class Publish(LpStep):
             elif self._symbol.vtype is float:
                 pass
             else:
-                raise exception.BuildLpStepException(f"Unsupported vtype {self._symbol.vtype} while publishing variable {self._symbol.name}")
+                raise exception.BuildLpStepException(
+                    f"Unsupported vtype {self._symbol.vtype} while publishing variable {self._symbol.name}"
+                )
 
             if self._zeros or (quantity > self._threshold):
                 data[self._symbol][self._dimension][index] = quantity
