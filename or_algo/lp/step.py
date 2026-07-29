@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from typing import Tuple
 
     from ortools.linear_solver import pywraplp
-    from register import Dimension
+    from register import Dimension, Selected
 
     from .symbol import VarKey, ConstrKey
 
@@ -40,6 +40,24 @@ class CreateVar(LpStep, ABC):
 
     def __init__(self, symbol: VarKey):
         super().__init__(symbol)
+
+    def _create(self,
+        selected: Selected,
+        model: pywraplp.Solver,
+        var: Register[VarKey],
+        dimension: Tuple[Dimension, ...],
+    ) -> None:
+        dim_signs = ','.join(d.sign for d in dimension)
+        for index in selected:
+            idx_str = ','.join(str(i) for i in index)
+            name = f'{self._symbol.sign}({dim_signs},)({idx_str},)'
+            if self.vtype == 'BINARY':
+                v = model.IntVar(0, 1, name)
+            elif self.vtype == 'INTEGER':
+                v = model.IntVar(0, model.infinity(), name)
+            else:  # CONTINUOUS
+                v = model.NumVar(0, model.infinity(), name)
+            var[self._symbol][dimension][index] = v
 
     @property
     def vtype(self) -> str:
