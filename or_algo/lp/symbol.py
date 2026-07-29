@@ -1,4 +1,5 @@
 """Symbol hierarchy for LP model elements."""
+
 from __future__ import annotations
 
 import itertools
@@ -29,48 +30,50 @@ class VarKey(NumKey):
 
     @delegable
     def sum(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
-        dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
-        idx_str = ','.join(str(i) for i in next(iter(selected)))
-        name = f'{self.sign}({dim_signs},MTC,)({idx_str},1,)'
+        dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
+        idx_str = ",".join(str(i) for i in next(iter(selected)))
+        name = f"{self.sign}({dim_signs},MTC,)({idx_str},1,)"
         sum_var = model.NumVar(-model.infinity(), model.infinity(), name)
-        model.Add(sum_var == sum(selected.values()), name=f'{name}_constr')
+        model.Add(sum_var == sum(selected.values()), name=f"{name}_constr")
         return sum_var
 
     @delegable
     def max(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
-        dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
-        idx_str = ','.join(str(i) for i in next(iter(selected)))
-        name = f'{self.sign}({dim_signs},MTC,)({idx_str},2,)'
+        dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
+        idx_str = ",".join(str(i) for i in next(iter(selected)))
+        name = f"{self.sign}({dim_signs},MTC,)({idx_str},2,)"
         max_var = model.NumVar(-model.infinity(), model.infinity(), name)
         for idx, var in selected.items():
-            i_str = ','.join(str(i) for i in idx)
-            model.Add(max_var >= var, name=f'{self.sign}({dim_signs},MTC,)({i_str},2,)')
+            i_str = ",".join(str(i) for i in idx)
+            model.Add(max_var >= var, name=f"{self.sign}({dim_signs},MTC,)({i_str},2,)")
         return max_var
 
     @delegable
     def min(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
-        dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
-        idx_str = ','.join(str(i) for i in next(iter(selected)))
-        name = f'{self.sign}({dim_signs},MTC,)({idx_str},3,)'
+        dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
+        idx_str = ",".join(str(i) for i in next(iter(selected)))
+        name = f"{self.sign}({dim_signs},MTC,)({idx_str},3,)"
         min_var = model.NumVar(-model.infinity(), model.infinity(), name)
         for idx, var in selected.items():
-            i_str = ','.join(str(i) for i in idx)
-            model.Add(min_var <= var, name=f'{self.sign}({dim_signs},MTC,)({i_str},3,)')
+            i_str = ",".join(str(i) for i in idx)
+            model.Add(min_var <= var, name=f"{self.sign}({dim_signs},MTC,)({i_str},3,)")
         return min_var
 
     @delegable
     def range(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
-        dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
-        idx_str = ','.join(str(i) for i in next(iter(selected)))
-        name = f'{self.sign}({dim_signs},MTC,)({idx_str},4,)'
+        dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
+        idx_str = ",".join(str(i) for i in next(iter(selected)))
+        name = f"{self.sign}({dim_signs},MTC,)({idx_str},4,)"
         range_var = model.NumVar(0, model.infinity(), name)
         for (idx1, v1), (idx2, v2) in itertools.permutations(selected.items(), 2):
-            i_str = ','.join(str(i) for i in idx1 + idx2)
-            model.Add(range_var >= v1 - v2, name=f'{self.sign}({dim_signs},MTC,)({i_str},4,)')
+            i_str = ",".join(str(i) for i in idx1 + idx2)
+            model.Add(range_var >= v1 - v2, name=f"{self.sign}({dim_signs},MTC,)({i_str},4,)")
         return range_var
 
     @delegable
-    def set_weight(self, selected: Selected, *, model: pywraplp.Solver, weight: Register[NumKey]) -> None:
+    def set_weight(
+        self, selected: Selected, *, model: pywraplp.Solver, weight: Register[NumKey]
+    ) -> None:
         w_space = weight[self][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             w = w_space[index,] if index in w_space else 0
@@ -81,20 +84,18 @@ class VarKey(NumKey):
         lb_space = lb[self][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             if index in lb_space:
-                dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
-                idx_str = ','.join(str(i) for i in index)
-                model.Add(var >= lb_space[index,],
-                    name=f'{self.sign}({dim_signs},)({idx_str},)_lb')
+                dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
+                idx_str = ",".join(str(i) for i in index)
+                model.Add(var >= lb_space[index,], name=f"{self.sign}({dim_signs},)({idx_str},)_lb")
 
     @delegable
     def set_ub(self, selected: Selected, *, model: pywraplp.Solver, ub: Register[NumKey]) -> None:
         ub_space = ub[self][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             if index in ub_space:
-                dim_signs = ','.join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
-                idx_str = ','.join(str(i) for i in index)
-                model.Add(var <= ub_space[index,],
-                    name=f'{self.sign}({dim_signs},)({idx_str},)_ub')
+                dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
+                idx_str = ",".join(str(i) for i in index)
+                model.Add(var <= ub_space[index,], name=f"{self.sign}({dim_signs},)({idx_str},)_ub")
 
 
 class ConstrKey(RegisterKey):

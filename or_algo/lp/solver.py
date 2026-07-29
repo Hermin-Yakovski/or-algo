@@ -1,4 +1,5 @@
 """LpSolver: Linear Programming solver using OR-Tools."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -9,12 +10,12 @@ from ..solver import Solver
 from . import exception
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Tuple, Type
+    from typing import Any
 
     from register import Register, RegisterKey
 
-    from or_algo.lp.symbol import VarKey
     from or_algo.lp.step import LpStep
+    from or_algo.lp.symbol import VarKey
 
 
 class LpSolver(Solver):
@@ -26,23 +27,19 @@ class LpSolver(Solver):
 
     _name: str
     _var: Register[VarKey]
-    _build_steps: List[Tuple[Type[LpStep], Tuple[Any, ...], Dict[str, Any]]]
-    _publish_steps: List[Tuple[Tuple[Any, ...], Dict[str, Any]]]
+    _build_steps: list[tuple[type[LpStep], tuple[Any, ...], dict[str, Any]]]
+    _publish_steps: list[tuple[tuple[Any, ...], dict[str, Any]]]
     _model: pywraplp.Solver
     _solver_type: str
 
-    def __init__(
-        self,
-        name: str,
-        solver_type: str = 'SCIP'
-    ):
+    def __init__(self, name: str, solver_type: str = "SCIP"):
         from register import Register
 
         super().__init__(name)
         self._name = name
         self._var = Register()
-        self._build_steps = list()
-        self._publish_steps = list()
+        self._build_steps = []
+        self._publish_steps = []
         self._solver_type = solver_type
 
         self._model = pywraplp.Solver.CreateSolver(solver_type)
@@ -59,7 +56,7 @@ class LpSolver(Solver):
     def publish(self, *args: Any, **kwargs: Any) -> None:
         self._publish_steps.append((args, kwargs))
 
-    def append(self, step: Type[LpStep], *args: Any, **kwargs: Any) -> None:
+    def append(self, step: type[LpStep], *args: Any, **kwargs: Any) -> None:
         """Add a build step to the execution sequence.
 
         Args:
@@ -70,7 +67,7 @@ class LpSolver(Solver):
         Raises:
             LpSolverException: If step type is unsupported
         """
-        from or_algo.lp.step import CreateVar, CreateConstr
+        from or_algo.lp.step import CreateConstr, CreateVar
 
         if issubclass(step, (CreateVar, CreateConstr)):
             self._build_steps.append((step, args, kwargs))
@@ -106,7 +103,7 @@ class LpSolver(Solver):
         self._model.EnableOutput()
 
         # write model to .lp file
-        with open(f"{self._name}.lp", 'w') as f:
+        with open(f"{self._name}.lp", "w") as f:
             f.write(self._model.ExportModelAsLpFormat(False))
 
         # Solve the model
@@ -126,6 +123,4 @@ class LpSolver(Solver):
         elif status == pywraplp.Solver.ABNORMAL:
             raise exception.LpModelOptimizeException("Solver encountered an error")
         else:
-            raise exception.LpModelOptimizeException(
-                f"No solution found! status={status}"
-            )
+            raise exception.LpModelOptimizeException(f"No solution found! status={status}")

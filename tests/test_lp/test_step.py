@@ -101,13 +101,97 @@ class TestCreateVar:
         step = ConcreteCreateVar(symbol=vk)
         assert step.vtype == 'BINARY'
 
-    def test_no_create_method(self):
+    def test_create_stores_variables(self):
         class ConcreteCreateVar(CreateVar):
             def run(self, data, model, var):
                 pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+        model = pywraplp.Solver.CreateSolver('SCIP')
+        d = Dimension('Item', '物料', 'I')
+        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
         step = ConcreteCreateVar(symbol=vk)
-        assert not hasattr(step, '_create')
+
+        var_reg = Register()
+        selected = {(0,): 10, (1,): 20}
+        step._create(selected, model, var_reg, (d,))
+
+        assert isinstance(var_reg[vk][d,][(0,)], pywraplp.Variable)
+        assert isinstance(var_reg[vk][d,][(1,)], pywraplp.Variable)
+
+    def test_create_binary_vtype(self):
+        class ConcreteCreateVar(CreateVar):
+            def run(self, data, model, var):
+                pass
+        model = pywraplp.Solver.CreateSolver('SCIP')
+        d = Dimension('Item', '物料', 'I')
+        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=bool)
+        step = ConcreteCreateVar(symbol=vk)
+
+        var_reg = Register()
+        step._create({(0,): None}, model, var_reg, (d,))
+
+        v = var_reg[vk][d,][(0,)]
+        assert isinstance(v, pywraplp.Variable)
+        assert v.Lb() == 0
+        assert v.Ub() == 1
+
+    def test_create_integer_vtype(self):
+        class ConcreteCreateVar(CreateVar):
+            def run(self, data, model, var):
+                pass
+        model = pywraplp.Solver.CreateSolver('SCIP')
+        d = Dimension('Item', '物料', 'I')
+        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=int)
+        step = ConcreteCreateVar(symbol=vk)
+
+        var_reg = Register()
+        step._create({(0,): None}, model, var_reg, (d,))
+
+        v = var_reg[vk][d,][(0,)]
+        assert isinstance(v, pywraplp.Variable)
+
+    def test_create_continuous_vtype(self):
+        class ConcreteCreateVar(CreateVar):
+            def run(self, data, model, var):
+                pass
+        model = pywraplp.Solver.CreateSolver('SCIP')
+        d = Dimension('Item', '物料', 'I')
+        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
+        step = ConcreteCreateVar(symbol=vk)
+
+        var_reg = Register()
+        step._create({(0,): None}, model, var_reg, (d,))
+
+        v = var_reg[vk][d,][(0,)]
+        assert isinstance(v, pywraplp.Variable)
+
+    def test_create_variable_naming(self):
+        class ConcreteCreateVar(CreateVar):
+            def run(self, data, model, var):
+                pass
+        model = pywraplp.Solver.CreateSolver('SCIP')
+        d = Dimension('Item', '物料', 'I')
+        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
+        step = ConcreteCreateVar(symbol=vk)
+
+        var_reg = Register()
+        step._create({(0,): None}, model, var_reg, (d,))
+
+        v = var_reg[vk][d,][(0,)]
+        assert v.name() == 'X(I,)(0,)'
+
+    def test_create_empty_selected(self):
+        class ConcreteCreateVar(CreateVar):
+            def run(self, data, model, var):
+                pass
+        model = pywraplp.Solver.CreateSolver('SCIP')
+        d = Dimension('Item', '物料', 'I')
+        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
+        step = ConcreteCreateVar(symbol=vk)
+
+        var_reg = Register()
+        step._create({}, model, var_reg, (d,))
+
+        assert vk not in var_reg or len(list(var_reg[vk][d,].keys())) == 0
 
 
 class TestCreateConstr:

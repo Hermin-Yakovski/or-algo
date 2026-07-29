@@ -1,42 +1,56 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling>=1.20.0"]
+build-backend = "hatchling.build"
+
+[project]
 name = "or-algo"
 version = "0.2.0"
 description = "A general-purpose algorithm framework for orchestrating solvers"
-authors = ["yehemin <yehemin@example.com>"]
+authors = [{name = "Hermin-Yakovski", email = "hemin.ye@qq.com"}]
 readme = "README.md"
-packages = [{include = "or_algo"}]
+requires-python = ">=3.11"
+dependencies = [
+    "ortools>=9.15.6755",
+    "or-register>=0.2.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-ortools = "^9.15.6755"
-register = {path = "D:/github/register/dist/register-0.1.0-py3-none-any.whl"}
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "mypy>=1.10",
+    "pytest-cov>=7.1.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0"
-ruff = "^0.8"
-mypy = "^1.10"
-pytest-cov = "^7.1.0"
+[tool.uv.sources]
+or-register = { index = "testpypi" }
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+explicit = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["or_algo"]
+
+[tool.coverage.run]
+source = ["or_algo"]
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report=term-missing --cov-report=html"
 
 [tool.ruff]
-exclude = ["tests"]
+exclude = ["tests", "docs", "README.md"]
 line-length = 100
 target-version = "py311"
 
 [tool.mypy]
-exclude = ["tests"]
+exclude = ["tests/"]
 python_version = "3.11"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = "register"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
 module = "ortools.*"
 ignore_missing_imports = true
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

@@ -1,12 +1,12 @@
 """Algorithm orchestrator class for or-algo package."""
 
-from typing import Any, Optional, Type
+from concurrent.futures import Future, ProcessPoolExecutor, as_completed
+from typing import Any
+
 from register import Register, RegisterKey
 
-from concurrent.futures import ProcessPoolExecutor, as_completed, Future
-
-from .solver import Solver
 from .exception import OrAlgoException
+from .solver import Solver
 from .task import SolverTask
 
 
@@ -19,10 +19,12 @@ class Algorithm:
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize an empty Algorithm."""
-        self._solvers: list[tuple[Type[Solver], tuple[Any, ...], dict[str, Any]]] = []
+        self._solvers: list[tuple[type[Solver], tuple[Any, ...], dict[str, Any]]] = []
         self._dependency_graph: dict[int, list[int]] = {}
 
-    def append(self, solver_type: Type[Solver], *args: Any, after: Optional[list[int]] = None, **kwargs: Any) -> int:
+    def append(
+        self, solver_type: type[Solver], *args: Any, after: list[int] | None = None, **kwargs: Any
+    ) -> int:
         """Add a solver to the execution sequence.
 
         Args:
@@ -73,17 +75,12 @@ class Algorithm:
             return False
 
         for task_id in range(1, len(self._solvers) + 1):
-            if task_id not in visited:
-                if dfs(task_id):
-                    return True
+            if task_id not in visited and dfs(task_id):
+                return True
 
         return False
 
-    def _get_ready_tasks(
-        self,
-        tasks: dict[int, "SolverTask"],
-        completed: set[int]
-    ) -> list[int]:
+    def _get_ready_tasks(self, tasks: dict[int, "SolverTask"], completed: set[int]) -> list[int]:
         """Find tasks whose dependencies are all satisfied.
 
         Args:
@@ -95,9 +92,12 @@ class Algorithm:
         """
         ready = []
         for task_id, task in tasks.items():
-            if task_id not in completed and task.state == "pending":
-                if all(dep_id in completed for dep_id in task.dependencies):
-                    ready.append(task_id)
+            if (
+                task_id not in completed
+                and task.state == "pending"
+                and all(dep_id in completed for dep_id in task.dependencies)
+            ):
+                ready.append(task_id)
         return ready
 
     def _merge_register(self, target: Register[RegisterKey], source: Register[RegisterKey]) -> None:
@@ -135,11 +135,7 @@ class Algorithm:
                     f"Failed {solver.__name__}.solve()! args={args}, kwargs={kwargs}"
                 ) from e
 
-    def parallel_solve(
-        self,
-        data: Register[RegisterKey],
-        executor: ProcessPoolExecutor
-    ) -> None:
+    def parallel_solve(self, data: Register[RegisterKey], executor: ProcessPoolExecutor) -> None:
         """Execute solvers in parallel using DAG-based lazy resolution.
 
         Args:
@@ -197,5 +193,3 @@ class Algorithm:
 
         except Exception as e:
             raise OrAlgoException(f"parallel_solve failed: {e}") from e
-
-        return

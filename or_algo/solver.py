@@ -1,6 +1,7 @@
 """Solver abstract base class for or-algo package."""
 
 from abc import ABC, abstractmethod
+
 from register import Register, RegisterKey
 
 

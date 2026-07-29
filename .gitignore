@@ -67,3 +67,7 @@ dmypy.json
 
 # ruff
 .ruff_cache/
+
+# Poetry
+poetry.lock
+poetry.toml
