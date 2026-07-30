@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "or-algo"
-version = "0.2.0"
+version = "0.3.0"
 description = "A general-purpose algorithm framework for orchestrating solvers"
 authors = [{name = "Hermin-Yakovski", email = "hemin.ye@qq.com"}]
 readme = "README.md"
