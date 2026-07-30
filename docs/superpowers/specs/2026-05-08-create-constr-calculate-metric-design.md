@@ -37,7 +37,7 @@ When working with aggregated variables (sums, maximums, minimums, ranges), we ne
 class CreateConstrCalculateMetric(CreateConstr):
     """Create metric aggregation constraints for variables with Metric dimension.
 
-    Supports SUM, MAX, MIN, and RANGE metrics from register.Register.
+    Supports SUM, MAX, MIN, and RANGE metrics from or_register.Register.
     Constraints are created but not stored.
     """
 
@@ -127,7 +127,7 @@ import itertools  # for permutations in RANGE
 from ortools.linear_solver import pywraplp  # already in TYPE_CHECKING
 
 # Need to ensure available:
-from register import Register  # for Register.SUM, Register.MAX, Register.MIN, Register.RANGE
+from or_register import Register  # for Register.SUM, Register.MAX, Register.MIN, Register.RANGE
 ```
 
 **Exception handling:**

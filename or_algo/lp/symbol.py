@@ -6,10 +6,10 @@ import itertools
 from typing import TYPE_CHECKING, Any
 
 from ortools.linear_solver import pywraplp
-from register import NumKey, RegisterKey, Selected, delegable
+from or_register import NumKey, RegisterKey, Selected, delegable
 
 if TYPE_CHECKING:
-    from register import Register
+    from or_register import Register
 
 
 class VarKey(NumKey):

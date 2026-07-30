@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Migrate `or-algo` (core + LP subpackage) to the refreshed `register` package API with `RegisterKey`-based access chain.
+**Goal:** Migrate `or-algo` (core + LP subpackage) to the refreshed `or_register` package API with `RegisterKey`-based access chain.
 
 **Architecture:** Type annotation changes in core package (`Parameter` → `RegisterKey`). Redesign of LP subpackage: `VarKey(NumKey)` with `@delegable` methods for weight/lb/ub/aggregations, `ConstrKey(RegisterKey)`, simplified `CreateVar`/`CreateConstr`/`Publish`, deleted `Symbol`/`CreateConstrCalculateMetric`/`_create`.
 
-**Tech Stack:** Python 3.11, register (refreshed), ortools, pytest, mypy, ruff
+**Tech Stack:** Python 3.11, or_register (refreshed), ortools, pytest, mypy, ruff
 
 **Style convention:** Always trailing comma on dimension/index tuples: `reg[k][d,][0,]`
 
@@ -44,14 +44,14 @@
 - [ ] **Step 1: Update `tests/test_solver.py` type annotations**
 
 Replace all occurrences:
-- `from register import Register, Parameter, Id, Index` → `from register import Register, RegisterKey, Id, Index`
+- `from or_register import Register, Parameter, Id, Index` → `from or_register import Register, RegisterKey, Id, Index`
 - `Register[Parameter]` → `Register[RegisterKey]`
 
 ```python
 """Tests for or_algo.solver module."""
 
 import pytest
-from register import Register, RegisterKey, Id, Index
+from or_register import Register, RegisterKey, Id, Index
 from or_algo.solver import Solver
 
 
@@ -115,7 +115,7 @@ def test_solver_solve_can_be_called(empty_register):
 - [ ] **Step 2: Update `tests/test_task.py` type annotations**
 
 Replace all occurrences:
-- `from register import Register, Parameter` → `from register import Register, RegisterKey`
+- `from or_register import Register, Parameter` → `from or_register import Register, RegisterKey`
 - `Register[Parameter]` → `Register[RegisterKey]`
 - `Register[Parameter]()` → `Register()`
 
@@ -125,7 +125,7 @@ Replace all occurrences:
 import pytest
 from or_algo.task import SolverTask
 from or_algo.solver import Solver
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 
 class DummySolver(Solver):
@@ -210,7 +210,7 @@ def test_solver_task_execute_returns_register():
 - [ ] **Step 3: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_solver.py tests/test_task.py -v`
-Expected: FAIL — `Parameter` not found in `register`
+Expected: FAIL — `Parameter` not found in `or_register`
 
 - [ ] **Step 4: Update `or_algo/solver.py`**
 
@@ -218,7 +218,7 @@ Expected: FAIL — `Parameter` not found in `register`
 """Solver abstract base class for or-algo package."""
 
 from abc import ABC, abstractmethod
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 
 class Solver(ABC):
@@ -260,7 +260,7 @@ class Solver(ABC):
 """SolverTask class for parallel execution wrapping."""
 
 from typing import Any
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 from .solver import Solver
 
 
@@ -378,7 +378,7 @@ if sys.platform == "win32":
 
 
 import pytest
-from register import Register, RegisterKey, Id, Code, Name, Index
+from or_register import Register, RegisterKey, Id, Code, Name, Index
 
 
 @pytest.fixture
@@ -400,7 +400,7 @@ def sample_register() -> Register[RegisterKey]:
 - [ ] **Step 2: Update `tests/test_algorithm.py` type annotations**
 
 Replace all occurrences:
-- `from register import Register, Parameter, Id, Index` → `from register import Register, RegisterKey, Id, Index`
+- `from or_register import Register, Parameter, Id, Index` → `from or_register import Register, RegisterKey, Id, Index`
 - `Register[Parameter]` → `Register[RegisterKey]`
 - `Register[Parameter]()` → `Register()`
 - `data: Register[Parameter]` → `data: Register[RegisterKey]`
@@ -416,7 +416,7 @@ Same replacements as step 2. Additionally:
 - [ ] **Step 4: Run tests to verify they fail**
 
 Run: `python -m pytest tests/test_algorithm.py tests/test_algorithm_parallel.py tests/conftest.py -v`
-Expected: FAIL — `Parameter` not found in `register`
+Expected: FAIL — `Parameter` not found in `or_register`
 
 - [ ] **Step 5: Update `or_algo/algorithm.py`**
 
@@ -424,7 +424,7 @@ Expected: FAIL — `Parameter` not found in `register`
 """Algorithm orchestrator class for or-algo package."""
 
 from typing import Any, Optional, Type
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 from concurrent.futures import ProcessPoolExecutor, as_completed, Future
 
@@ -649,7 +649,7 @@ git commit -m "refactor: migrate algorithm to RegisterKey type annotations"
 """Tests for VarKey and ConstrKey."""
 
 import pytest
-from register import NumKey, RegisterKey, Register, Dimension, Selected, delegable
+from or_register import NumKey, RegisterKey, Register, Dimension, Selected, delegable
 from or_algo.lp.symbol import VarKey, ConstrKey
 from ortools.linear_solver import pywraplp
 
@@ -759,7 +759,7 @@ import itertools
 from typing import TYPE_CHECKING
 
 from ortools.linear_solver import pywraplp
-from register import NumKey, RegisterKey, Register, Selected, delegable
+from or_register import NumKey, RegisterKey, Register, Selected, delegable
 
 if TYPE_CHECKING:
     pass
@@ -1021,7 +1021,7 @@ Replace the entire file:
 
 import pytest
 from abc import ABC
-from register import Register, RegisterKey, NumKey, Dimension
+from or_register import Register, RegisterKey, NumKey, Dimension
 from or_algo.lp.symbol import VarKey, ConstrKey
 from or_algo.lp.step import LpStep, CreateVar, CreateConstr
 from ortools.linear_solver import pywraplp
@@ -1189,7 +1189,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 from . import exception
 
@@ -1197,7 +1197,7 @@ if TYPE_CHECKING:
     from typing import Tuple
 
     from ortools.linear_solver import pywraplp
-    from register import Dimension
+    from or_register import Dimension
 
     from .symbol import VarKey, ConstrKey
 ```
@@ -1302,7 +1302,7 @@ git commit -m "refactor: simplify LpStep, CreateVar (no weight/lb/ub/_create), C
 
 - [ ] **Step 1: Remove CreateConstrCalculateMetric from `or_algo/lp/step.py`**
 
-Delete the entire `CreateConstrCalculateMetric` class (lines ~240-344 in current file). Also remove the `from register import Register, Metric` import — change to `from register import Register, RegisterKey`. Remove `import itertools` if no longer needed.
+Delete the entire `CreateConstrCalculateMetric` class (lines ~240-344 in current file). Also remove the `from or_register import Register, Metric` import — change to `from or_register import Register, RegisterKey`. Remove `import itertools` if no longer needed.
 
 - [ ] **Step 2: Remove from `or_algo/lp/__init__.py` exports**
 
@@ -1539,7 +1539,7 @@ from or_algo.lp.solver import LpSolver
 from or_algo import Solver
 from or_algo.lp.step import CreateVar, CreateConstr
 from or_algo.lp.symbol import VarKey, ConstrKey
-from register import Register, RegisterKey, NumKey, Dimension
+from or_register import Register, RegisterKey, NumKey, Dimension
 from ortools.linear_solver import pywraplp
 
 
@@ -1698,7 +1698,7 @@ from . import exception
 if TYPE_CHECKING:
     from typing import Any, Dict, List, Optional, Tuple, Type
 
-    from register import Register, RegisterKey
+    from or_register import Register, RegisterKey
     from or_algo.lp.symbol import VarKey
     from or_algo.lp.step import LpStep
 
@@ -1722,7 +1722,7 @@ class LpSolver(Solver):
         name: str,
         solver_type: str = 'SCIP'
     ):
-        from register import Register
+        from or_register import Register
 
         super().__init__(name)
         self._name = name

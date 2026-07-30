@@ -38,7 +38,7 @@ def parallel_solve(
 ```python
 from concurrent.futures import ProcessPoolExecutor
 from or_algo import Algorithm
-from register import Register, Parameter
+from or_register import Register, Parameter
 
 # Build DAG
 algo = Algorithm()
@@ -224,7 +224,7 @@ Step 7: D completes, merge results
 
 - `concurrent.futures.ProcessPoolExecutor` - Python standard library
 - `pickle` - Python standard library
-- `register` package - Existing dependency
+- `or_register` package - Existing dependency
 
 ## Files to Modify
 

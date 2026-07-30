@@ -1,7 +1,7 @@
 """Tests for or_algo.solver module."""
 
 import pytest
-from register import Register, RegisterKey, Id, Index
+from or_register import Register, RegisterKey, Id, Index
 from or_algo.solver import Solver
 
 

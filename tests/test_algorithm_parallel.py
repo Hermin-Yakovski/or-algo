@@ -3,7 +3,7 @@
 import pickle
 import pytest
 from concurrent.futures import ProcessPoolExecutor
-from register import Register, RegisterKey, Id, Index
+from or_register import Register, RegisterKey, Id, Index
 from or_algo.solver import Solver
 from or_algo.algorithm import Algorithm
 from or_algo.exception import OrAlgoException

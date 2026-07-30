@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 from .solver import Solver
 

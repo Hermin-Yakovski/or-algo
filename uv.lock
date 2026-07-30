@@ -483,7 +483,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "or-register", specifier = ">=0.2.0", index = "https://test.pypi.org/simple/" },
+    { name = "or-register", specifier = ">=0.3.0", index = "https://test.pypi.org/simple/" },
     { name = "ortools", specifier = ">=9.15.6755" },
 ]
 
@@ -497,11 +497,11 @@ dev = [
 
 [[package]]
 name = "or-register"
-version = "0.2.0"
+version = "0.3.0"
 source = { registry = "https://test.pypi.org/simple/" }
-sdist = { url = "https://test-files.pythonhosted.org/packages/0f/50/240924278983a01eaf194a63bc982ab273c241ac680cf3be599fefa079d5/or_register-0.2.0.tar.gz", hash = "sha256:b32032c99b695813cbf4f8ae253d3d08510ac754c69a4521fde2e3b2340f6f96", size = 95444, upload-time = "2026-07-29T04:00:46.167Z" }
+sdist = { url = "https://test-files.pythonhosted.org/packages/ee/d0/cfa4746e6e086d091eef4b1a4e637a2fa2b501a8f9426a04e9dfdcd4a92c/or_register-0.3.0.tar.gz", hash = "sha256:3372576364abf5c113a7a5f1659d2f2d9cf9d4d74f46f344a140db59e1a07a8a", size = 91938, upload-time = "2026-07-30T09:13:46.903Z" }
 wheels = [
-    { url = "https://test-files.pythonhosted.org/packages/1f/5f/5c825b68b57ff0bd4fe26096d3eaa9b57b35162873e09945258ae18c7d01/or_register-0.2.0-py3-none-any.whl", hash = "sha256:d54b741a11694e35625b7ba00f2c2324f53679c67b2443a45046d353dcd1aaba", size = 7335, upload-time = "2026-07-29T04:00:45.245Z" },
+    { url = "https://test-files.pythonhosted.org/packages/4b/c4/db14bd7bfcf895c5df4ae367b1072b517bb183af45abfccb89f092d0c8de/or_register-0.3.0-py3-none-any.whl", hash = "sha256:07a9e160228e22189fd6b35e7a04d94aa06f48ce6e5ac6a603d2b3158cbfb475", size = 7380, upload-time = "2026-07-30T09:13:46.208Z" },
 ]
 
 [[package]]

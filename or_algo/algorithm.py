@@ -3,7 +3,7 @@
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from typing import Any
 
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 from .exception import OrAlgoException
 from .solver import Solver

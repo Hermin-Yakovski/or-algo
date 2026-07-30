@@ -2,7 +2,7 @@
 
 ## Overview
 
-Adapt `or-algo` (core + LP subpackage) to the refreshed `register` package API. The new register replaces the old `Parameter`-based access with a `RegisterKey`-based chain: `Register` → `KeyView` → `IndexSpace` → `Selection`.
+Adapt `or-algo` (core + LP subpackage) to the refreshed `or_register` package API. The new register replaces the old `Parameter`-based access with a `RegisterKey`-based chain: `Register` → `KeyView` → `IndexSpace` → `Selection`.
 
 ## Scope
 
@@ -40,11 +40,11 @@ Import and type annotation changes only:
 
 ```python
 # Old
-from register import Register, Parameter
+from or_register import Register, Parameter
 def solve(self, data: Register[Parameter]) -> Register[Parameter]:
 
 # New
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 def solve(self, data: Register[RegisterKey]) -> Register[RegisterKey]:
 ```
 
@@ -59,7 +59,7 @@ Import and type annotation changes. All `Register[Parameter]` → `Register[Regi
 Import and type annotation changes only:
 
 ```python
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 def execute(self, reg: Register[RegisterKey]) -> Register[RegisterKey]:
 ```
 
@@ -216,12 +216,12 @@ class ConstrKey(RegisterKey):
 **Imports:**
 
 ```python
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 # TYPE_CHECKING:
-from register import Dimension
+from or_register import Dimension
 ```
 
-Remove `from register import Metric` (no longer needed).
+Remove `from or_register import Metric` (no longer needed).
 Remove `CreateConstrCalculateMetric` references.
 
 **`LpStep`:**

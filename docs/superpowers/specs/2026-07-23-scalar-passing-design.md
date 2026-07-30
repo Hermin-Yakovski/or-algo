@@ -54,7 +54,7 @@ Add an optional `scalars: dict[str, Any]` parameter to `Solver.solve()` and an o
 ```python
 from abc import ABC, abstractmethod
 from typing import Any
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 class Solver(ABC):
     """Abstract base class for solvers that operate on a Register."""
@@ -201,7 +201,7 @@ def parallel_solve(
 
 ```python
 from typing import Any
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 from .solver import Solver
 
 

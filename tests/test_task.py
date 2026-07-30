@@ -3,7 +3,7 @@
 import pytest
 from or_algo.task import SolverTask
 from or_algo.solver import Solver
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 
 class DummySolver(Solver):

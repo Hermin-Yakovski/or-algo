@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 
 class Solver(ABC):

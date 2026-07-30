@@ -1,7 +1,7 @@
 """Tests for VarKey and ConstrKey."""
 
 import pytest
-from register import NumKey, RegisterKey, Register, Dimension, Selected, delegable
+from or_register import NumKey, RegisterKey, Register, Dimension, Selected, delegable
 from or_algo.lp.symbol import VarKey, ConstrKey
 from ortools.linear_solver import pywraplp
 

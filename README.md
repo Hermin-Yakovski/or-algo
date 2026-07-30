@@ -11,7 +11,7 @@ pip install or-algo
 ## Quick Start
 
 ```python
-from register import Register, Parameter
+from or_register import Register, Parameter
 from or_algo import Solver, Algorithm
 
 # Define your domain-specific solver
@@ -34,7 +34,7 @@ The `Algorithm.parallel_solve()` method enables parallel execution of independen
 
 ```python
 from concurrent.futures import ProcessPoolExecutor
-from register import Register, Parameter
+from or_register import Register, Parameter
 from or_algo import Algorithm
 
 # Build dependency graph
@@ -80,7 +80,7 @@ The `or_algo.lp` module provides Linear Programming support using Google OR-Tool
 ```python
 from or_algo.lp import LpSolver, CreateVar, CreateConstr
 from or_algo.lp.symbol import Var, Constr
-from register import Register
+from or_register import Register
 
 # Create LP solver (defaults to CBC)
 solver = LpSolver(name="my_lp_problem")

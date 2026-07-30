@@ -55,7 +55,7 @@ Add to `or_algo/lp/step.py` after the `CreateVar` class (around line 223):
 class CreateConstrCalculateMetric(CreateConstr):
     """Create metric aggregation constraints for variables with Metric dimension.
 
-    Supports SUM, MAX, MIN, and RANGE metrics from register.Register.
+    Supports SUM, MAX, MIN, and RANGE metrics from or_register.Register.
     Constraints are created but not stored.
     """
 
@@ -129,7 +129,7 @@ def test_create_constr_calculate_metric_no_metric_dimension():
     """Test that run() skips variables without Metric dimension."""
     from or_algo.lp.step import CreateConstrCalculateMetric
     from or_algo.lp.symbol import Var
-    from register import Register, Parameter, Dimension
+    from or_register import Register, Parameter, Dimension
     from ortools.linear_solver import pywraplp
     from unittest.mock import Mock
 
@@ -173,7 +173,7 @@ Add to `CreateConstrCalculateMetric` class in `or_algo/lp/step.py`:
 class CreateConstrCalculateMetric(CreateConstr):
     """Create metric aggregation constraints for variables with Metric dimension.
 
-    Supports SUM, MAX, MIN, and RANGE metrics from register.Register.
+    Supports SUM, MAX, MIN, and RANGE metrics from or_register.Register.
     Constraints are created but not stored.
     """
 
@@ -191,7 +191,7 @@ class CreateConstrCalculateMetric(CreateConstr):
             model: OR-Tools solver instance
             var: Register for storing variables/constraints
         """
-        from register import Register as Reg
+        from or_register import Register as Reg
         from or_algo.lp.symbol import Var
         from ortools.linear_solver import pywraplp
 
@@ -238,7 +238,7 @@ def test_create_constr_calculate_metric_sum():
     """Test that SUM metric creates equality constraint with sum of base variables."""
     from or_algo.lp.step import CreateConstrCalculateMetric
     from or_algo.lp.symbol import Var
-    from register import Register, Parameter, Dimension
+    from or_register import Register, Parameter, Dimension
     from ortools.linear_solver import pywraplp
 
     # Create mock parameter
@@ -310,7 +310,7 @@ Update the `run()` method in `or_algo/lp/step.py` to handle SUM:
             model: OR-Tools solver instance
             var: Register for storing variables/constraints
         """
-        from register import Register as Reg
+        from or_register import Register as Reg
         from or_algo.lp.symbol import Var
         from ortools.linear_solver import pywraplp
         from or_algo.lp import exception as lp_exception
@@ -398,7 +398,7 @@ def test_create_constr_calculate_metric_max():
     """Test that MAX metric creates lower bound constraints (metric >= each base)."""
     from or_algo.lp.step import CreateConstrCalculateMetric
     from or_algo.lp.symbol import Var
-    from register import Register, Parameter, Dimension
+    from or_register import Register, Parameter, Dimension
     from ortools.linear_solver import pywraplp
 
     # Create mock parameter
@@ -504,7 +504,7 @@ def test_create_constr_calculate_metric_min():
     """Test that MIN metric creates upper bound constraints (metric <= each base)."""
     from or_algo.lp.step import CreateConstrCalculateMetric
     from or_algo.lp.symbol import Var
-    from register import Register, Parameter, Dimension
+    from or_register import Register, Parameter, Dimension
     from ortools.linear_solver import pywraplp
 
     # Create mock parameter
@@ -610,7 +610,7 @@ def test_create_constr_calculate_metric_range():
     """Test that RANGE metric creates pairwise difference constraints."""
     from or_algo.lp.step import CreateConstrCalculateMetric
     from or_algo.lp.symbol import Var
-    from register import Register, Parameter, Dimension
+    from or_register import Register, Parameter, Dimension
     from ortools.linear_solver import pywraplp
     import itertools
 
@@ -724,7 +724,7 @@ def test_create_constr_calculate_metric_unknown_metric():
     from or_algo.lp.step import CreateConstrCalculateMetric
     from or_algo.lp.symbol import Var
     from or_algo.lp.exception import BuildLpStepException
-    from register import Register, Parameter, Dimension
+    from or_register import Register, Parameter, Dimension
     from ortools.linear_solver import pywraplp
     import pytest
 

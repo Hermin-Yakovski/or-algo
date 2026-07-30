@@ -22,7 +22,7 @@ if sys.platform == "win32":
 
 
 import pytest
-from register import Register, RegisterKey, Id, Code, Name, Index
+from or_register import Register, RegisterKey, Id, Code, Name, Index
 
 
 @pytest.fixture

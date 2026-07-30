@@ -348,7 +348,7 @@ Add to `or_algo/lp/symbol.py`:
 """Symbol hierarchy for LP model elements."""
 
 from typing import Type
-from register import Parameter  # or-algo dependency
+from or_register import Parameter  # or-algo dependency
 
 
 class Symbol:
@@ -582,8 +582,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from register import Register
-    from register import Parameter
+    from or_register import Register
+    from or_register import Parameter
     from or_algo.lp.symbol import Symbol
     from ortools.linear_solver import pywraplp
 
@@ -660,7 +660,7 @@ Add to `tests/test_lp/test_step.py`:
 ```python
 from or_algo.lp.step import CreateVar
 from or_algo.lp.symbol import Var
-from register import Register
+from or_register import Register
 from unittest.mock import Mock
 
 
@@ -775,8 +775,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from register import Register
-    from register import Parameter
+    from or_register import Register
+    from or_register import Parameter
     from or_algo.lp.symbol import Symbol, Var
     from ortools.linear_solver import pywraplp
 
@@ -1023,7 +1023,7 @@ def test_lp_solver_invalid_solver_type():
 
 def test_lp_solver_has_weight_lb_ub_defaults():
     """LpSolver should create default Register for weight, lb, ub."""
-    from register import Register
+    from or_register import Register
     from or_algo.lp import Symbol
 
     solver = LpSolver(name="test_solver")
@@ -1035,7 +1035,7 @@ def test_lp_solver_has_weight_lb_ub_defaults():
 
 def test_lp_solver_custom_weight_lb_ub():
     """LpSolver should accept custom weight, lb, ub Registers."""
-    from register import Register
+    from or_register import Register
 
     weight = Register()
     lb = Register()
@@ -1062,7 +1062,7 @@ Create `or_algo/lp/solver.py`:
 from typing import TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
-    from register import Register, Parameter
+    from or_register import Register, Parameter
     from or_algo.lp.symbol import Symbol
     from ortools.linear_solver import pywraplp
 
@@ -1095,7 +1095,7 @@ class LpSolver(Solver):
         ub: "Register[Symbol]" = None,
         solver_type: str = 'CBC'
     ):
-        from register import Register
+        from or_register import Register
 
         super().__init__(name)
         self._name = name
@@ -1168,7 +1168,7 @@ Add to `tests/test_lp/test_solver.py`:
 ```python
 from or_algo.lp.step import CreateVar, CreateConstr
 from or_algo.lp.symbol import Var, Constr
-from register import Register
+from or_register import Register
 from unittest.mock import Mock
 
 
@@ -1307,7 +1307,7 @@ git commit -m "feat: implement LpSolver.append() method"
 Add to `tests/test_lp/test_solver.py`:
 
 ```python
-from register import Register, Parameter
+from or_register import Register, Parameter
 
 
 def test_lp_solver_solve_executes_build_steps():
@@ -1670,7 +1670,7 @@ Subject to:
     y >= 0
 """
 
-from register import Register, Parameter
+from or_register import Register, Parameter
 from or_algo import Algorithm
 from or_algo.lp import LpSolver, CreateVar, CreateConstr
 from or_algo.lp.symbol import Var, Constr
@@ -1740,7 +1740,7 @@ The `or_algo.lp` module provides Linear Programming support using Google OR-Tool
 ```python
 from or_algo.lp import LpSolver, CreateVar, CreateConstr
 from or_algo.lp.symbol import Var, Constr
-from register import Register
+from or_register import Register
 
 # Create LP solver (defaults to CBC)
 solver = LpSolver(name="my_lp_problem")

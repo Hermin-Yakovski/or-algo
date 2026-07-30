@@ -54,7 +54,7 @@ Abstract base class for solvers that operate on a Register.
 
 ```python
 from abc import ABC, abstractmethod
-from register import Register, Parameter
+from or_register import Register, Parameter
 
 class Solver(ABC):
     """Abstract base class for solvers that operate on a Register."""
@@ -82,7 +82,7 @@ Orchestrates sequential execution of multiple Solvers.
 
 ```python
 from typing import Type
-from register import Register, Parameter
+from or_register import Register, Parameter
 
 class Algorithm:
     """Orchestrates sequential execution of multiple Solvers."""

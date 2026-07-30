@@ -255,7 +255,7 @@ def _publish(self, data: "Register[Parameter]") -> "Register[Parameter]":
     Returns:
         Register with solution values extracted from self._var.
     """
-    from register import Register
+    from or_register import Register
 
     publish = Register[Parameter]()
     for symbol, dims, index in self._publishes:
@@ -617,7 +617,7 @@ def test_lp_solver_full_publish_flow():
     solver = LpSolver(name="test_solver")
 
     # Create real parameter
-    from register import Parameter
+    from or_register import Parameter
     param = Parameter(name="x", name_cn="x变量", vtype=float)
     data = Register[Parameter]()
     data.register(param)
@@ -758,7 +758,7 @@ LpSolver can automatically extract solution values using the `publishes` attribu
 ```python
 from or_algo.lp import LpSolver, CreateVar
 from or_algo.lp.symbol import Var
-from register import Register, Parameter
+from or_register import Register, Parameter
 
 # Create parameter and variable
 param = Parameter(name="production", name_cn="产量", vtype=float)

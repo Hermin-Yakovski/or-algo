@@ -20,7 +20,7 @@
 ```python
 # tests/test_task.py - add to existing file
 import pickle
-from register import Register, Parameter
+from or_register import Register, Parameter
 
 def test_solver_task_execute_returns_register():
     """Test that execute() returns the modified Register."""
@@ -92,7 +92,7 @@ git commit -m "feat: modify SolverTask.execute() to return Register"
 # tests/test_algorithm.py - add to existing file
 def test_algorithm_merge_register():
     """Test that _merge_register() merges source into target."""
-    from register import Register, Parameter, Id, Index
+    from or_register import Register, Parameter, Id, Index
 
     algo = Algorithm()
 

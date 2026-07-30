@@ -170,7 +170,7 @@ pip install or-algo
 ## Quick Start
 
 ```python
-from register import Register, Parameter
+from or_register import Register, Parameter
 from or_algo import Solver, Algorithm
 
 # Define your domain-specific solver
@@ -340,7 +340,7 @@ Create `tests/test_solver.py`:
 """Tests for or_algo.solver module."""
 
 import pytest
-from register import Register, Parameter, Id
+from or_register import Register, Parameter, Id
 from or_algo.solver import Solver
 
 
@@ -410,7 +410,7 @@ Create `or_algo/solver.py`:
 """Solver abstract base class for or-algo package."""
 
 from abc import ABC, abstractmethod
-from register import Register, Parameter
+from or_register import Register, Parameter
 
 
 class Solver(ABC):
@@ -473,7 +473,7 @@ Create `tests/test_algorithm.py`:
 """Tests for or_algo.algorithm module."""
 
 import pytest
-from register import Register, Parameter, Id
+from or_register import Register, Parameter, Id
 from or_algo import Solver, Algorithm, OrAlgoException
 
 
@@ -649,7 +649,7 @@ Create `or_algo/algorithm.py`:
 """Algorithm orchestrator class for or-algo package."""
 
 from typing import Type
-from register import Register, Parameter
+from or_register import Register, Parameter
 
 from .solver import Solver
 from .exception import OrAlgoException
@@ -726,7 +726,7 @@ git commit -m "feat: add Algorithm orchestrator class"
 """Shared fixtures for or-algo tests."""
 
 import pytest
-from register import Register, Parameter, Id, Code, Name
+from or_register import Register, Parameter, Id, Code, Name
 
 
 @pytest.fixture

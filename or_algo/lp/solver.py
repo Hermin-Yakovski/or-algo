@@ -12,7 +12,7 @@ from . import exception
 if TYPE_CHECKING:
     from typing import Any
 
-    from register import Register, RegisterKey
+    from or_register import Register, RegisterKey
 
     from or_algo.lp.step import LpStep
     from or_algo.lp.symbol import VarKey
@@ -33,7 +33,7 @@ class LpSolver(Solver):
     _solver_type: str
 
     def __init__(self, name: str, solver_type: str = "SCIP"):
-        from register import Register
+        from or_register import Register
 
         super().__init__(name)
         self._name = name

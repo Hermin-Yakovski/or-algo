@@ -5,13 +5,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from register import Register, RegisterKey
+from or_register import Register, RegisterKey
 
 from . import exception
 
 if TYPE_CHECKING:
     from ortools.linear_solver import pywraplp
-    from register import Dimension, Selected
+    from or_register import Dimension, Selected
 
     from .symbol import ConstrKey, VarKey
 

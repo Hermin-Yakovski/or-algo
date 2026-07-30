@@ -95,7 +95,7 @@ ignore_missing_imports = true
 - `[tool.poetry.dependencies]`
 - `[tool.poetry.group.dev.dependencies]`
 - `[tool.ruff] exclude = ["tests"]` (match register pattern)
-- `[tool.mypy.overrides]` for `register` module (now `or-register` with proper stubs)
+- `[tool.mypy.overrides]` for `or-register` module (with proper stubs)
 
 ### 2. `.python-version` — New File
 

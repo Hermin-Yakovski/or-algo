@@ -2,7 +2,7 @@
 
 import pytest
 from abc import ABC
-from register import Register, RegisterKey, NumKey, Dimension
+from or_register import Register, RegisterKey, NumKey, Dimension
 from or_algo.lp.symbol import VarKey, ConstrKey
 from or_algo.lp.step import LpStep, CreateVar, CreateConstr, Publish
 from ortools.linear_solver import pywraplp
