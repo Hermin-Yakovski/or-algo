@@ -16,7 +16,8 @@ def model():
 @pytest.fixture
 def var_key():
     """Create a VarKey for testing."""
-    return VarKey(id=1, name='TestVar', name_cn='测试变量', sign='X')
+    nk = NumKey(id=1, name='TestVar', name_cn='测试变量')
+    return VarKey(nk, sign='X')
 
 
 @pytest.fixture
@@ -26,8 +27,7 @@ def constr_key():
 
 
 class TestVarKey:
-    def test_inherits_from_numkey(self, var_key):
-        assert isinstance(var_key, NumKey)
+    def test_inherits_from_register_key(self, var_key):
         assert isinstance(var_key, RegisterKey)
 
     def test_properties(self, var_key):
@@ -40,7 +40,8 @@ class TestVarKey:
         assert var_key.vtype is float
 
     def test_custom_vtype(self):
-        vk = VarKey(id=2, name='IntVar', name_cn='整数', sign='Y', vtype=int)
+        nk = NumKey(id=2, name='IntVar', name_cn='整数', vtype=int)
+        vk = VarKey(nk, sign='Y')
         assert vk.vtype is int
 
     def test_validate_checks_pywraplp_variable(self, var_key, model):
@@ -51,8 +52,9 @@ class TestVarKey:
         assert result[(1,)] is False
 
     def test_hash_eq(self):
-        vk1 = VarKey(id=1, name='X', name_cn='x', sign='x')
-        vk2 = VarKey(id=1, name='X', name_cn='x', sign='y')
+        nk = NumKey(id=1, name='X', name_cn='x')
+        vk1 = VarKey(nk, sign='x')
+        vk2 = VarKey(nk, sign='y')
         assert vk1 == vk2  # same id + name
         assert hash(vk1) == hash(vk2)
 
@@ -103,7 +105,8 @@ class TestVarKeyDelegable:
     def setup(self):
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Loc', '地点', 'L')
-        vk = VarKey(id=10, name='Ship', name_cn='运输', sign='X')
+        nk = NumKey(id=10, name='Ship', name_cn='运输')
+        vk = VarKey(nk, sign='X')
         reg = Register()
         # Create 3 variables
         reg[vk][d,][0,] = model.NumVar(0, 100, 'x0')

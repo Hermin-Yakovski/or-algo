@@ -5,7 +5,12 @@ from or_algo.lp.solver import LpSolver
 from or_algo import Solver
 from or_algo.lp.step import CreateVar, CreateConstr
 from or_algo.lp.symbol import VarKey, ConstrKey
-from or_register import Register, Dimension
+from or_register import Register, Dimension, NumKey
+
+
+def _make_vk(id=1, name='X', name_cn='x', sign='x', vtype=float):
+    nk = NumKey(id=id, name=name, name_cn=name_cn, vtype=vtype)
+    return VarKey(nk, sign=sign)
 
 
 def test_lp_solver_is_solver():
@@ -39,7 +44,7 @@ def test_lp_solver_no_weight_lb_ub():
 
 def test_lp_solver_append_create_var():
     solver = LpSolver(name="test_solver")
-    vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+    vk = _make_vk()
 
     class TestCreateVar(CreateVar):
         def run(self, data, model, var):
@@ -83,7 +88,7 @@ def test_lp_solver_solve_executes_steps():
         def run(self, data, model, var):
             executed.append('create_var')
 
-    vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+    vk = _make_vk()
     solver.append(TrackingCreateVar, vk)
 
     data = Register()
@@ -93,7 +98,7 @@ def test_lp_solver_solve_executes_steps():
 
 def test_lp_solver_solve_returns_data():
     solver = LpSolver(name="test_solver_ret")
-    vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+    vk = _make_vk()
 
     class SimpleCreateVar(CreateVar):
         def run(self, data, model, var):
@@ -110,7 +115,7 @@ def test_lp_solver_solve_returns_data():
 
 def test_lp_solver_append_no_default_args():
     solver = LpSolver(name="test_solver_args")
-    vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+    vk = _make_vk()
 
     class TestCreateVar(CreateVar):
         def run(self, data, model, var):

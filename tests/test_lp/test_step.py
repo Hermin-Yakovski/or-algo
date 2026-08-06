@@ -8,19 +8,24 @@ from or_algo.lp.step import LpStep, CreateVar, CreateConstr, Publish
 from ortools.linear_solver import pywraplp
 
 
+def _make_vk(id=1, name='X', name_cn='x', sign='x', vtype=float):
+    nk = NumKey(id=id, name=name, name_cn=name_cn, vtype=vtype)
+    return VarKey(nk, sign=sign)
+
+
 class TestLpStep:
     def test_is_abstract(self):
         assert issubclass(LpStep, ABC)
 
     def test_cannot_instantiate_directly(self):
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+        vk = _make_vk()
         with pytest.raises(TypeError):
             LpStep(symbol=vk)
 
     def test_requires_run_method(self):
         class InvalidStep(LpStep):
             pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+        vk = _make_vk()
         with pytest.raises(TypeError):
             InvalidStep(symbol=vk)
 
@@ -28,7 +33,7 @@ class TestLpStep:
         class ConcreteStep(LpStep):
             def run(self, data, model, var):
                 pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+        vk = _make_vk()
         step = ConcreteStep(symbol=vk)
         assert step._symbol is vk
 
@@ -36,7 +41,7 @@ class TestLpStep:
         class ConcreteStep(LpStep):
             def run(self, data, model, var):
                 pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+        vk = _make_vk()
         step = ConcreteStep(symbol=vk)
         assert isinstance(step._symbol, VarKey)
 
@@ -55,7 +60,7 @@ class TestCreateVar:
         assert issubclass(CreateVar, ABC)
 
     def test_cannot_instantiate_directly(self):
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+        vk = _make_vk()
         with pytest.raises(TypeError):
             CreateVar(symbol=vk)
 
@@ -63,7 +68,7 @@ class TestCreateVar:
         class ConcreteCreateVar(CreateVar):
             def run(self, data, model, var):
                 pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+        vk = _make_vk()
         step = ConcreteCreateVar(symbol=vk)
         assert step._symbol is vk
 
@@ -71,7 +76,7 @@ class TestCreateVar:
         class ConcreteCreateVar(CreateVar):
             def run(self, data, model, var):
                 pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x')
+        vk = _make_vk()
         step = ConcreteCreateVar(symbol=vk)
         assert not hasattr(step, '_weight')
         assert not hasattr(step, '_lb')
@@ -81,7 +86,7 @@ class TestCreateVar:
         class ConcreteCreateVar(CreateVar):
             def run(self, data, model, var):
                 pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x', vtype=float)
+        vk = _make_vk(vtype=float)
         step = ConcreteCreateVar(symbol=vk)
         assert step.vtype == 'CONTINUOUS'
 
@@ -89,7 +94,7 @@ class TestCreateVar:
         class ConcreteCreateVar(CreateVar):
             def run(self, data, model, var):
                 pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x', vtype=int)
+        vk = _make_vk(vtype=int)
         step = ConcreteCreateVar(symbol=vk)
         assert step.vtype == 'INTEGER'
 
@@ -97,7 +102,7 @@ class TestCreateVar:
         class ConcreteCreateVar(CreateVar):
             def run(self, data, model, var):
                 pass
-        vk = VarKey(id=1, name='X', name_cn='x', sign='x', vtype=bool)
+        vk = _make_vk(vtype=bool)
         step = ConcreteCreateVar(symbol=vk)
         assert step.vtype == 'BINARY'
 
@@ -107,7 +112,7 @@ class TestCreateVar:
                 pass
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
+        vk = _make_vk(sign='X', vtype=float)
         step = ConcreteCreateVar(symbol=vk)
 
         var_reg = Register()
@@ -123,7 +128,7 @@ class TestCreateVar:
                 pass
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=bool)
+        vk = _make_vk(sign='X', vtype=bool)
         step = ConcreteCreateVar(symbol=vk)
 
         var_reg = Register()
@@ -140,7 +145,7 @@ class TestCreateVar:
                 pass
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=int)
+        vk = _make_vk(sign='X', vtype=int)
         step = ConcreteCreateVar(symbol=vk)
 
         var_reg = Register()
@@ -155,7 +160,7 @@ class TestCreateVar:
                 pass
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
+        vk = _make_vk(sign='X', vtype=float)
         step = ConcreteCreateVar(symbol=vk)
 
         var_reg = Register()
@@ -170,7 +175,7 @@ class TestCreateVar:
                 pass
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
+        vk = _make_vk(sign='X', vtype=float)
         step = ConcreteCreateVar(symbol=vk)
 
         var_reg = Register()
@@ -185,7 +190,7 @@ class TestCreateVar:
                 pass
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
+        vk = _make_vk(sign='X', vtype=float)
         step = ConcreteCreateVar(symbol=vk)
 
         var_reg = Register()
@@ -218,7 +223,7 @@ class TestPublish:
     def setup(self):
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=float)
+        vk = _make_vk(sign='X', vtype=float)
 
         var_reg = Register()
         v0 = model.NumVar(0, 10, 'v0')
@@ -240,7 +245,7 @@ class TestPublish:
         data = Register()
         pub = Publish(symbol=vk, dimension=(d,))
         pub.run(data, model, var_reg)
-        result = data[vk][d,]
+        result = data[vk.parameter][d,]
         assert (0,) in result
         assert (1,) in result
 
@@ -249,7 +254,7 @@ class TestPublish:
         data = Register()
         pub = Publish(symbol=vk, dimension=(d,), threshold=100.0)
         pub.run(data, model, var_reg)
-        result = data[vk][d,]
+        result = data[vk.parameter][d,]
         assert len(result) == 0
 
     def test_publish_zeros_includes_zero_values(self, setup):
@@ -257,14 +262,14 @@ class TestPublish:
         data = Register()
         pub = Publish(symbol=vk, dimension=(d,), zeros=True)
         pub.run(data, model, var_reg)
-        result = data[vk][d,]
+        result = data[vk.parameter][d,]
         assert (0,) in result
         assert (1,) in result
 
     def test_publish_int_vtype_rounds(self):
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=int)
+        vk = _make_vk(sign='X', vtype=int)
 
         var_reg = Register()
         v0 = model.IntVar(0, 10, 'v0')
@@ -278,14 +283,14 @@ class TestPublish:
         data = Register()
         pub = Publish(symbol=vk, dimension=(d,))
         pub.run(data, model, var_reg)
-        val = data[vk][(d,)][(0,)]
+        val = data[vk.parameter][(d,)][(0,)]
         assert isinstance(val, int)
         assert val == 7
 
     def test_publish_bool_vtype(self):
         model = pywraplp.Solver.CreateSolver('SCIP')
         d = Dimension('Item', '物料', 'I')
-        vk = VarKey(id=1, name='X', name_cn='x', sign='X', vtype=bool)
+        vk = _make_vk(sign='X', vtype=bool)
 
         var_reg = Register()
         v0 = model.IntVar(0, 1, 'v0')
@@ -298,7 +303,7 @@ class TestPublish:
         data = Register()
         pub = Publish(symbol=vk, dimension=(d,))
         pub.run(data, model, var_reg)
-        val = data[vk][(d,)][(0,)]
+        val = data[vk.parameter][(d,)][(0,)]
         assert isinstance(val, bool)
         assert val is True
 
@@ -307,7 +312,7 @@ class TestPublish:
         data = Register()
         pub = Publish(symbol=vk, dimension=(d,), target=None)
         pub.run(data, model, var_reg)
-        result = data[vk][d,]
+        result = data[vk.parameter][d,]
         assert (0,) in result
         assert (1,) in result
 
@@ -316,6 +321,6 @@ class TestPublish:
         data = Register()
         pub = Publish(symbol=vk, dimension=(d,), target=(slice(0, 1),))
         pub.run(data, model, var_reg)
-        result = data[vk][d,]
+        result = data[vk.parameter][d,]
         assert (0,) in result
         assert len(result) == 1

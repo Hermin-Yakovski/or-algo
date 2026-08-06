@@ -5,31 +5,67 @@ from __future__ import annotations
 import itertools
 from typing import TYPE_CHECKING, Any
 
-from ortools.linear_solver import pywraplp
 from or_register import NumKey, RegisterKey, Selected, delegable
+from ortools.linear_solver import pywraplp
 
 if TYPE_CHECKING:
     from or_register import Register
 
 
-class VarKey(NumKey):
+class VarKey(RegisterKey):
     """Decision variable key that wraps a NumKey and adds LP-specific delegable methods."""
 
     _sign: str
+    _parameter: NumKey
 
-    def __init__(self, id: int, name: str, name_cn: str, sign: str, vtype: type = float):
-        super().__init__(id, name, name_cn, vtype)
+    def __init__(self, num_key: NumKey, *, sign: str):
+        super().__init__()
         self._sign = sign
+        self._parameter = num_key
 
     @property
     def sign(self) -> str:
         return self._sign
 
+    @property
+    def parameter(self) -> NumKey:
+        return self._parameter
+
+    def __str__(self) -> str:
+        return str(self._parameter)
+
+    def __repr__(self) -> str:
+        return repr(self._parameter)
+
+    def __hash__(self) -> int:
+        return hash(self._parameter)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, VarKey):
+            return self._parameter == other._parameter
+        return NotImplemented
+
+    @property
+    def id(self) -> int:
+        return self._parameter.id
+
+    @property
+    def name(self) -> str:
+        return self._parameter.name
+
+    @property
+    def name_cn(self) -> str:
+        return self._parameter.name_cn
+
+    @property
+    def vtype(self) -> type:
+        return self._parameter.vtype
+
     def validate(self, selected: Selected, **kwargs: Any) -> dict[tuple[int, ...], bool]:
         return {k: isinstance(v, pywraplp.Variable) for k, v in selected.items()}
 
     @delegable
-    def sum(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
+    def sum(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
         dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
         idx_str = ",".join(str(i) for i in next(iter(selected)))
         name = f"{self.sign}({dim_signs},MTC,)({idx_str},1,)"
@@ -38,7 +74,7 @@ class VarKey(NumKey):
         return sum_var
 
     @delegable
-    def max(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
+    def max(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
         dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
         idx_str = ",".join(str(i) for i in next(iter(selected)))
         name = f"{self.sign}({dim_signs},MTC,)({idx_str},2,)"
@@ -49,7 +85,7 @@ class VarKey(NumKey):
         return max_var
 
     @delegable
-    def min(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
+    def min(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
         dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
         idx_str = ",".join(str(i) for i in next(iter(selected)))
         name = f"{self.sign}({dim_signs},MTC,)({idx_str},3,)"
@@ -60,7 +96,7 @@ class VarKey(NumKey):
         return min_var
 
     @delegable
-    def range(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:  # type: ignore[override]
+    def range(self, selected: Selected, *, model: pywraplp.Solver) -> pywraplp.Variable:
         dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
         idx_str = ",".join(str(i) for i in next(iter(selected)))
         name = f"{self.sign}({dim_signs},MTC,)({idx_str},4,)"
@@ -74,14 +110,14 @@ class VarKey(NumKey):
     def set_weight(
         self, selected: Selected, *, model: pywraplp.Solver, weight: Register[NumKey]
     ) -> None:
-        w_space = weight[self][selected._dims,]  # type: ignore[attr-defined]
+        w_space = weight[self._parameter][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             w = w_space[index,] if index in w_space else 0
             model.Objective().SetCoefficient(var, w)
 
     @delegable
     def set_lb(self, selected: Selected, *, model: pywraplp.Solver, lb: Register[NumKey]) -> None:
-        lb_space = lb[self][selected._dims,]  # type: ignore[attr-defined]
+        lb_space = lb[self._parameter][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             if index in lb_space:
                 dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]
@@ -90,7 +126,7 @@ class VarKey(NumKey):
 
     @delegable
     def set_ub(self, selected: Selected, *, model: pywraplp.Solver, ub: Register[NumKey]) -> None:
-        ub_space = ub[self][selected._dims,]  # type: ignore[attr-defined]
+        ub_space = ub[self._parameter][selected._dims,]  # type: ignore[attr-defined]
         for index, var in selected.items():
             if index in ub_space:
                 dim_signs = ",".join(d.sign for d in selected._dims)  # type: ignore[attr-defined]

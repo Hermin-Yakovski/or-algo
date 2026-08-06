@@ -10,8 +10,8 @@ from or_register import Register, RegisterKey
 from . import exception
 
 if TYPE_CHECKING:
-    from ortools.linear_solver import pywraplp
     from or_register import Dimension, Selected
+    from ortools.linear_solver import pywraplp
 
     from .symbol import ConstrKey, VarKey
 
@@ -141,4 +141,4 @@ class Publish(LpStep):
                 )
 
             if self._zeros or (quantity > self._threshold):
-                data[self._symbol][self._dimension][index] = quantity
+                data[self._symbol.parameter][self._dimension][index] = quantity
