@@ -12,7 +12,7 @@ from .task import SolverTask
 if TYPE_CHECKING:
     from types import ModuleType
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     "Algorithm",
